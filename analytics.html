@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Analytics Dashboard</title>
+  <style>
+    :root {
+      --primary: #4361ee;
+      --secondary: #3f37c9;
+      --success: #1ee725;
+      --danger: #f72585;
+      --warning: #f8961e;
+      --info: #4895ef;
+      --light: #f8f9fa;
+      --dark: #212529;
+    }
+    
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 20px;
+      color: #334155;
+    }
+    
+    h1 { 
+      text-align: center; 
+      margin-bottom: 30px;
+      color: var(--dark);
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+    
+    .charts-container {
+      display: flex;
+      flex-direction: column;
+      gap: 25px;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .chart-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 25px;
+    }
+    
+    .card { 
+      background: rgb(255, 254, 254); 
+      padding: 25px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+    
+    .card h3 {
+      margin-top: 0;
+      margin-bottom: 20px;
+      color: var(--dark);
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    canvas { 
+      width: 100% !important; 
+      height: 300px !important;
+    }
+    
+    /* Tablet View */
+    @media (max-width: 1024px) {
+      .chart-row {
+        grid-template-columns: 1fr;
+      }
+      
+      .card {
+        padding: 20px;
+      }
+    }
+    
+    /* Mobile View */
+    @media (max-width: 640px) {
+      .charts-container {
+        gap: 20px;
+      }
+      
+      .card {
+        padding: 15px;
+      }
+      
+      h1 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+      }
+      
+      .card h3 {
+        font-size: 1.1rem;
+        margin-bottom: 15px;
+      }
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body>
+  <h1>Analytics Dashboard</h1>
+
+  <div class="charts-container">
+    <!-- First Row: Daily Orders and Revenue Trend -->
+    <div class="chart-row">
+      <div class="card">
+        <h3>Daily Orders (Last 7 Days)</h3>
+        <canvas id="dailyOrdersChart"></canvas>
+      </div>
+      <div class="card">
+        <h3>Revenue Trend (Last 7 Days)</h3>
+        <canvas id="revenueTrendChart"></canvas>
+      </div>
+    </div>
+    
+    <!-- Second Row: Popular Items and Monthly Revenue -->
+    <div class="chart-row">
+      <div class="card">
+        <h3>Popular Items</h3>
+        <canvas id="popularItemsChart"></canvas>
+      </div>
+      <div class="card">
+        <h3>Monthly Revenue (Last 6 Months)</h3>
+        <canvas id="monthlyRevenueChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Helper function to generate gradient
+    function createGradient(ctx, color1, color2) {
+      const gradient = ctx.createLinearGradient(0, 0, 0, 300);
+      gradient.addColorStop(0, color1);
+      gradient.addColorStop(1, color2);
+      return gradient;
+    }
+
+    // Format date for display
+    function formatDisplayDate(dateStr) {
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    }
+
+    // Format month for display
+    function formatDisplayMonth(monthStr) {
+      const [year, month] = monthStr.split('-');
+      return new Date(year, month-1).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    }
+
+    // Generate beautiful color palette
+    function generateColors(count) {
+      const baseColors = [
+        'rgba(67, 97, 238, 0.8)',  // Primary
+        'rgba(76, 201, 240, 0.8)',  // Success
+        'rgba(248, 150, 30, 0.8)',  // Warning
+        'rgba(243, 104, 224, 0.8)', // Pink
+        'rgba(72, 149, 239, 0.8)',  // Info
+        'rgba(106, 176, 76, 0.8)',  // Green
+        'rgba(247, 37, 133, 0.8)'   // Danger
+      ];
+      
+      const colors = [];
+      for(let i = 0; i < count; i++) {
+        colors.push(baseColors[i % baseColors.length]);
+      }
+      return colors;
+    }
+
+    // Initialize charts with better styling
+    const dailyOrdersCtx = document.getElementById('dailyOrdersChart').getContext('2d');
+    const dailyOrdersChart = new Chart(dailyOrdersCtx, {
+      type: 'bar',
+      data: { 
+        labels: [], 
+        datasets: [{
+          label: 'Orders', 
+          data: [], 
+          backgroundColor: createGradient(dailyOrdersCtx, 'rgba(67, 97, 238, 0.8)', 'rgba(63, 55, 201, 0.8)'),
+          borderColor: 'rgba(67, 97, 238, 1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false
+        }] 
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: { size: 14, weight: 'bold' },
+            bodyFont: { size: 12 },
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false
+            
+          },
+          datalabels: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { color: '#64748b' }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b' }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart'
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+
+    const popularItemsCtx = document.getElementById('popularItemsChart').getContext('2d');
+    const popularItemsChart = new Chart(popularItemsCtx, {
+      type: 'doughnut',
+      data: { 
+        labels: [], 
+        datasets: [{ 
+          label: 'Items Sold', 
+          data: [], 
+          backgroundColor: [],
+          borderWidth: 0,
+          hoverOffset: 10
+        }] 
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              padding: 20,
+              usePointStyle: true,
+              pointStyle: 'circle',
+              font: { size: 12 }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: { size: 14, weight: 'bold' },
+            bodyFont: { size: 12 },
+            padding: 12,
+            cornerRadius: 8
+          },
+          datalabels: {
+            color: '#fff',
+            font: { weight: 'bold', size: 12 },
+            formatter: (value) => value > 5 ? value : ''
+          }
+        },
+        animation: {
+          animateScale: true,
+          animateRotate: true
+        }
+      },
+      plugins: [ChartDataLabels]
+    });
+
+    const revenueTrendCtx = document.getElementById('revenueTrendChart').getContext('2d');
+    const revenueTrendChart = new Chart(revenueTrendCtx, {
+      type: 'line',
+      data: { 
+        labels: [], 
+        datasets: [{ 
+          label: 'Revenue ₹', 
+          data: [], 
+          borderColor: 'rgba(76, 201, 240, 1)',
+          backgroundColor: createGradient(revenueTrendCtx, 'rgba(76, 201, 240, 0.2)', 'rgba(76, 201, 240, 0)'),
+          borderWidth: 3,
+          tension: 0.4,
+          fill: true,
+          pointBackgroundColor: '#fff',
+          pointBorderColor: 'rgba(76, 201, 240, 1)',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7
+        }] 
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: { size: 14, weight: 'bold' },
+            bodyFont: { size: 12 },
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { 
+              color: '#64748b',
+              callback: function(value) {
+                return '₹' + value;
+              }
+            }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b' }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+
+    const monthlyRevenueCtx = document.getElementById('monthlyRevenueChart').getContext('2d');
+    const monthlyRevenueChart = new Chart(monthlyRevenueCtx, {
+      type: 'bar',
+      data: { 
+        labels: [], 
+        datasets: [{ 
+          label: 'Revenue ₹', 
+          data: [], 
+          backgroundColor: createGradient(monthlyRevenueCtx, 'rgba(248, 150, 30, 0.8)', 'rgba(245, 158, 11, 0.8)'),
+          borderColor: 'rgba(248, 150, 30, 1)',
+          borderWidth: 1,
+          borderRadius: 6,
+          borderSkipped: false
+        }] 
+      },
+      options: { 
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { 
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            titleFont: { size: 14, weight: 'bold' },
+            bodyFont: { size: 12 },
+            padding: 12,
+            cornerRadius: 8,
+            displayColors: false,
+            callbacks: {
+              label: function(context) {
+                return 'Revenue: ₹' + context.raw;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: 'rgba(0,0,0,0.05)' },
+            ticks: { 
+              color: '#64748b',
+              callback: function(value) {
+                return '₹' + value;
+              }
+            }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#64748b' }
+          }
+        },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart'
+        }
+      }
+    });
+
+    // Real-time listener
+    db.collection('orders').onSnapshot(snapshot => {
+      const allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const dailyOrdersMap = {};
+      const revenueMap = {};
+      const itemCounts = {};
+      const monthlyRevenueMap = {};
+
+      const today = new Date();
+      
+      // Last 7 days
+      for(let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        dailyOrdersMap[dateStr] = 0;
+        revenueMap[dateStr] = 0;
+      }
+      
+      // Last 6 months
+      for(let i = 5; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        const monthStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+        monthlyRevenueMap[monthStr] = 0;
+      }
+
+      allOrders.forEach(order => {
+        const orderDate = order.date ? new Date(order.date).toISOString().split('T')[0] : null;
+        const monthStr = order.date ? formatMonth(order.date) : null;
+        const total = order.totalAmount || (order.items?.reduce((s,i) => s + ((i.price||0)*(i.quantity||1)),0) || 0);
+
+        // Daily charts
+        if(orderDate && dailyOrdersMap.hasOwnProperty(orderDate)) {
+          dailyOrdersMap[orderDate] += 1;
+          if(order.status === 'completed') revenueMap[orderDate] += total;
+        }
+
+        // Monthly revenue
+        if(monthStr && monthlyRevenueMap.hasOwnProperty(monthStr) && order.status === 'completed') {
+          monthlyRevenueMap[monthStr] += total;
+        }
+
+        // Popular items
+        if(order.items) {
+          order.items.forEach(item => {
+            if(!itemCounts[item.name]) itemCounts[item.name] = 0;
+            itemCounts[item.name] += item.quantity || 1;
+          });
+        }
+      });
+
+      // Format dates for display
+      const last7Days = Object.keys(dailyOrdersMap).map(formatDisplayDate);
+      const last6Months = Object.keys(monthlyRevenueMap).map(formatDisplayMonth);
+      
+      // Update charts with formatted data
+      dailyOrdersChart.data.labels = last7Days;
+      dailyOrdersChart.data.datasets[0].data = Object.values(dailyOrdersMap);
+      dailyOrdersChart.update();
+
+      revenueTrendChart.data.labels = last7Days;
+      revenueTrendChart.data.datasets[0].data = Object.values(revenueMap);
+      revenueTrendChart.update();
+
+      const items = Object.keys(itemCounts);
+      popularItemsChart.data.labels = items;
+      popularItemsChart.data.datasets[0].data = items.map(i => itemCounts[i]);
+      popularItemsChart.data.datasets[0].backgroundColor = generateColors(items.length);
+      popularItemsChart.update();
+
+      monthlyRevenueChart.data.labels = last6Months;
+      monthlyRevenueChart.data.datasets[0].data = Object.values(monthlyRevenueMap);
+      monthlyRevenueChart.update();
+    });
+
+    // Helper functions
+    function formatDate(date) {
+      if(!date) return null;
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? null : d.toISOString().split('T')[0];
+    }
+
+    function formatMonth(date) {
+      if(!date) return null;
+      const d = new Date(date);
+      return isNaN(d.getTime()) ? null : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    }
+  </script>
+</body>
+</html>
