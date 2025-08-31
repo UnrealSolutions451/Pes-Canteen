@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Canteen menu</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #03045e, #46a0fa);
+      color: white;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      text-align: center;
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 200px 15px 15px;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      line-height: 1.3;
+    }
+
+    p {
+      font-size: 1.7rem;
+      line-height: 1.7;
+      max-width: 600px;
+      margin: 0 auto 30px;
+    }
+
+    .btn {
+      background: #FFD166;
+      color: #03045e;
+      font-size: 2rem;
+      font-weight: bold;
+      padding: 18px 30px;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      width: 100%;
+      max-width: 500px;
+      height: 120px;
+    }
+
+    .btn:hover {
+      background: #ffb703;
+      transform: scale(1.05);
+    }
+
+    /* 🔹 Mobile optimizations */
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 3rem;
+      }
+      p {
+        font-size: 1.7rem;
+      }
+      .btn {
+        font-size: 1.7rem;
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to<br>P.E.S. Canteen 🍴</h1>
+    <p>Tap the button below to open the menu and start ordering!</p>
+    <button class="btn" id="openMenuBtn">Open Menu</button>
+  </div>
+
+  <script>
+    // Generate UUID-like session
+    function generateSessionId() {
+      return 'xxxx-4xxx-yxxx-xxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+      });
+    }
+
+    function createSession() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const table = urlParams.get("table") || "unknown";
+
+      const sessionId = generateSessionId();
+      const expiry = Date.now() + (20 * 60 * 1000); // 20 mins
+
+      // Save session locally
+      localStorage.setItem("canteenSession", JSON.stringify({
+        sessionId,
+        table,
+        expiry
+      }));
+
+      // Redirect to menu
+      window.location.href = `index.html?table=${table}&session=${sessionId}`;
+    }
+
+    document.getElementById("openMenuBtn").addEventListener("click", createSession);
+  </script>
+</body>
+</html>

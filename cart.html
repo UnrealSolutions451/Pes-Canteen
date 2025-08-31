@@ -15,7 +15,7 @@
       --text: #292F36;
       --card-bg: #FFFFFF;
       --border-radius: 12px;
-      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --shadow: 0 4px 6px rgba(0,0,0,0.1);
       --transition: all 0.3s ease;
     }
 
@@ -29,7 +29,7 @@
     body {
       background-color: var(--background);
       color: var(--text);
-      padding-bottom: 70px; /* space for bottom nav */
+      padding-bottom: 70px;
     }
 
     header {
@@ -43,9 +43,7 @@
       box-shadow: var(--shadow);
     }
 
-    .cart-container {
-      padding: 15px;
-    }
+    .cart-container { padding: 15px; }
 
     .cart-item {
       background: var(--card-bg);
@@ -58,15 +56,9 @@
       box-shadow: var(--shadow);
     }
 
-    .item-info {
-      font-weight: 500;
-    }
+    .item-info { font-weight: 500; }
 
-    .qty-controls {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
+    .qty-controls { display: flex; align-items: center; gap: 6px; }
 
     .qty-btn, .remove-btn {
       padding: 6px 10px;
@@ -77,23 +69,11 @@
       transition: var(--transition);
     }
 
-    .qty-btn {
-      background: #FB8D22;
-      color: white;
-    }
+    .qty-btn { background: #FB8D22; color: white; }
+    .qty-btn:hover { background: var(--secondary); }
 
-    .qty-btn:hover {
-      background: var(--secondary);
-    }
-
-    .remove-btn {
-      background: #dc3545;
-      color: white;
-    }
-
-    .remove-btn:hover {
-      background: #a71d2a;
-    }
+    .remove-btn { background: #dc3545; color: white; }
+    .remove-btn:hover { background: #a71d2a; }
 
     #total {
       margin-top: 15px;
@@ -119,19 +99,13 @@
       box-shadow: var(--shadow);
     }
 
-    #placeOrder {
-      background: #008000;
-      color: white;
-    }
-
-    #placeOrder:hover {
-      background: var(--secondary);
-    }
+    #placeOrder { background: #008000; color: white; }
+    #placeOrder:hover { background: var(--secondary); }
 
     #clearCart {
       background: var(--accent);
       color: white;
-      display: none; /* hidden until cart has items */
+      display: none;
     }
 
     .bottom-nav {
@@ -161,15 +135,9 @@
       position: relative;
     }
 
-    .nav-item.active {
-      color: white;
-      background: var(--primary);
-    }
+    .nav-item.active { color: white; background: var(--primary); }
 
-    .nav-icon {
-      font-size: 1.2rem;
-      margin-bottom: 4px;
-    }
+    .nav-icon { font-size: 1.2rem; margin-bottom: 4px; }
 
     .cart-count {
       position: absolute;
@@ -216,19 +184,29 @@
 
   <!-- Firebase v9 SDK -->
   <script type="module">
-    // ✅ Get tableId from query string
-    const params = new URLSearchParams(window.location.search);
-    const tableId = params.get("table") || "default";
-
-    // ✅ Preserve table param in nav links
-    document.getElementById("menuNav").href = `index.html?table=${tableId}`;
-    document.getElementById("cartNav").href = `cart.html?table=${tableId}`;
-
-    // ✅ CART KEY based on table
-    const CART_KEY = `cart_${tableId}`;
-
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+    // -----------------
+    // Session Handling
+    // -----------------
+    const params = new URLSearchParams(window.location.search);
+    const tableId = params.get("table") || "default";
+    const sessionId = params.get("session");
+
+    const sessionData = JSON.parse(localStorage.getItem("canteenSession") || "{}");
+    const now = Date.now();
+
+    if (!sessionId || !sessionData.sessionId || sessionId !== sessionData.sessionId || now > sessionData.expiry) {
+      window.location.href = `landing.html?table=${tableId}`;
+    }
+
+    // Cart key includes table + session
+    const CART_KEY = `cart_${tableId}_${sessionId}`;
+
+    // Preserve params in nav links
+    document.getElementById("menuNav").href = `index.html?table=${tableId}&session=${sessionId}`;
+    document.getElementById("cartNav").href = `cart.html?table=${tableId}&session=${sessionId}`;
 
     // Firebase Config
     const firebaseConfig = {
@@ -244,7 +222,9 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // ✅ CART LOGIC
+    // -----------------
+    // Cart Logic
+    // -----------------
     let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
     const cartDiv = document.getElementById("cart");
     const totalDiv = document.getElementById("total");
@@ -330,7 +310,6 @@
       }
 
       const orderCode = "ORD-" + Math.floor(1000 + Math.random() * 9000);
-
       const now = new Date();
       const orderDate = now.toISOString().split("T")[0];
       const orderTime = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -338,6 +317,7 @@
       try {
         await addDoc(collection(db, "orders"), {
           table: tId,
+          sessionId: sessionId,
           items: cart,
           status: "pending",
           orderCode: orderCode,
