@@ -86,10 +86,60 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
+  .logout-container {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+}
+
+#logoutBtn {
+  background: #d22c27;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+#logoutBtn:hover {
+  background: #a71d2a;
+}
+@media (max-width: 480px) {
+.logout-container {
+  position: absolute;
+  top: 25px;
+  right: 10px;
+}
+
+#logoutBtn {
+  background: #d22c27;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+#logoutBtn:hover {
+  background: #a71d2a;
+}
+
+}
+
   </style>
 </head>
 <body>
-  <header>Menu Availability</header>
+  
+  <script type="module" src="auth-guard.js"></script>
+  <header>Menu Availability <div class="logout-container">
+  <button id="logoutBtn">⏻</button>
+</div></header>
 
   <main>
     <div id="menuList">Loading menu items...</div>
@@ -101,6 +151,39 @@
   
   <!-- Your Firebase Config -->
   <script src="firebase-config.js"></script>
+  
+  <script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
+    authDomain: "pes-canteen.firebaseapp.com",
+    projectId: "pes-canteen",
+    storageBucket: "pes-canteen.firebasestorage.app",
+    messagingSenderId: "398702472399",
+    appId: "1:398702472399:web:626587a3b358bd55075bba",
+    measurementId: "G-LL28HG6PDB"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try {
+      const currentPage = encodeURIComponent(window.location.pathname);
+
+      await signOut(auth);
+
+      // Redirect to login with ?redirect=currentPage
+      window.location.href = `login.html?redirect=${currentPage}`;
+    } catch (err) {
+      console.error("Logout error:", err);
+      alert("Error logging out. Please try again.");
+    }
+  });
+</script>
+
 
   <script>
     const menuList = document.getElementById("menuList");

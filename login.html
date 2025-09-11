@@ -1,241 +1,106 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Login / Create Account</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>Login - P.E.S. Canteen</title>
   <style>
-    :root {
-      --brand: #2563eb;
-      --panel-bg: #fff;
-      --muted: #6b7280;
-      --danger: #b91c1c;
-      --ok: #065f46;
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #03045e, #46a0fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
     }
-
-    body { font-family: Inter, Arial, sans-serif; background:#f6f7fb; margin:0; -webkit-font-smoothing:antialiased; }
-    .wrap { max-width: 420px; margin: 40px auto; background:var(--panel-bg); border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.06); overflow:hidden; }
-    .tabs { display:flex; position:relative; }
-    .tab {
-      flex:1;
-      text-align:center;
-      padding:14px 12px;
-      cursor:pointer;
-      background:#eef2ff;
-      color:#374151;
-      font-weight:700;
-      user-select:none;
-      transition: color .18s ease, background .18s ease, transform .18s ease;
-      z-index:2;
+    .login-card {
+      background: #fff;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      width: 100%;
+      max-width: 380px;
+      text-align: center;
     }
-    .tab:hover { transform: translateY(-2px); }
-    .tab.active { background:var(--brand); color:#fff; }
-    .tab-indicator {
-      position:absolute;
-      bottom:0;
-      left:0;
-      width:50%;
-      height:4px;
-      background:#fbbf24;
-      border-radius:4px;
-      transform: translateX(0%);
-      transition: transform .28s cubic-bezier(.2,.9,.2,1);
-      z-index:1;
+    .login-card h2 {
+      margin-bottom: 20px;
+      color: #03045e;
     }
-
-    .inner { padding: 22px; }
-    label { display:block; font-size:14px; margin:10px 0 6px; color:#374151; }
-    input[type="text"], input[type="email"], input[type="password"] {
-      width:100%;
-      padding:12px;
-      border:1px solid #cbd5e1;
-      border-radius:10px;
-      outline:none;
-      font-size:15px;
-      box-sizing:border-box;
-      transition: box-shadow .12s ease, border-color .12s ease;
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
     }
-    input:focus { box-shadow:0 4px 18px rgba(37,99,235,0.08); border-color:var(--brand); }
-
-    #nameRow {
-      overflow: hidden;
-      max-height: 0;
-      opacity: 0;
-      transition: max-height .32s ease, opacity .24s ease;
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #46a0fa;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
     }
-    #nameRow.open {
-      max-height: 120px;
-      opacity: 1;
+    button:hover {
+      background: #0056b3;
     }
-
-    .btn {
-      width:100%;
-      padding:12px;
-      background:var(--brand);
-      color:#fff;
-      border:none;
-      border-radius:10px;
-      cursor:pointer;
-      font-weight:800;
-      font-size:15px;
-      margin-top:14px;
-      transition: transform .08s ease, opacity .12s ease;
+    .error {
+      color: red;
+      font-size: 0.9rem;
+      margin-top: 8px;
     }
-    .btn:active { transform: translateY(1px); }
-    .btn:disabled { opacity:.6; cursor:not-allowed; }
-
-    .muted { color:var(--muted); font-size:13px; text-align:center; margin-top:10px; }
-    .msg { margin-top:12px; font-size:13px; }
-    .err { color:var(--danger); background:#fee2e2; border:1px solid #fecaca; padding:8px 10px; border-radius:8px; margin-top:10px; font-size:13px; }
-    .ok { color:var(--ok); background:#d1fae5; border:1px solid #a7f3d0; padding:8px 10px; border-radius:8px; margin-top:10px; font-size:13px; }
   </style>
 </head>
 <body>
-  <div class="wrap" role="region" aria-label="Auth">
-    <div class="tabs" role="tablist">
-      <div id="tab-login" class="tab">Login</div>
-      <div id="tab-signup" class="tab">Create account</div>
-      <div class="tab-indicator" id="tabIndicator"></div>
-    </div>
-
-    <div class="inner">
-      <form id="authForm" autocomplete="on">
-        <div id="nameRow">
-          <label for="name">Full Name</label>
-          <input id="name" type="text" placeholder="Your full name">
-        </div>
-
-        <label for="email">Email</label>
-        <input id="email" type="email" placeholder="you@example.com" required>
-
-        <label for="password">Password</label>
-        <input id="password" type="password" placeholder="••••••••" required>
-
-        <button id="submitBtn" class="btn" type="submit">Login</button>
-        <div id="msg" class="msg"></div>
-        <div class="muted">After signing in, you'll be redirected to Lucky Spin or Menu.</div>
-      </form>
-    </div>
+  <div class="login-card">
+    <h2>🔐 Staff Login</h2>
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="password" id="password" placeholder="Password" required />
+    <button id="loginBtn">Login</button>
+    <p id="errorMsg" class="error"></p>
   </div>
 
   <!-- Firebase -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      try {
-        const tabLogin = document.getElementById('tab-login');
-        const tabSignup = document.getElementById('tab-signup');
-        const indicator = document.getElementById('tabIndicator');
-        const nameRow = document.getElementById('nameRow');
-        const submitBtn = document.getElementById('submitBtn');
-        const msg = document.getElementById('msg');
-        let mode = 'login';
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
+      authDomain: "pes-canteen.firebaseapp.com",
+      projectId: "pes-canteen",
+      storageBucket: "pes-canteen.firebasestorage.app",
+      messagingSenderId: "398702472399",
+      appId: "1:398702472399:web:626587a3b358bd55075bba",
+      measurementId: "G-LL28HG6PDB"
+    };
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const orderParam = urlParams.get('order') || '';
-        const tableParam = urlParams.get('table') || '';
-        const initialMode = (urlParams.get('mode') === 'signup') ? 'signup' : null;
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
 
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+   document.getElementById("loginBtn").addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const errorMsg = document.getElementById("errorMsg");
 
-        function moveIndicator(to) {
-          indicator.style.transform = to === 0 ? 'translateX(0%)' : 'translateX(100%)';
-        }
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
 
-        function setMode(next) {
-          mode = next;
-          if (mode === 'signup') {
-            tabSignup.classList.add('active');
-            tabLogin.classList.remove('active');
-            nameRow.classList.add('open');
-            submitBtn.textContent = 'Create account';
-            moveIndicator(1);
-          } else {
-            tabLogin.classList.add('active');
-            tabSignup.classList.remove('active');
-            nameRow.classList.remove('open');
-            submitBtn.textContent = 'Login';
-            moveIndicator(0);
-          }
-          msg.innerHTML = '';
-        }
+    // ✅ Check redirect param
+    const params = new URLSearchParams(window.location.search);
+    const redirectPage = params.get("redirect") || "canteen.html";
 
-        tabLogin.addEventListener('click', e => { e.preventDefault(); setMode('login'); });
-        tabSignup.addEventListener('click', e => { e.preventDefault(); setMode('signup'); });
+    window.location.href = redirectPage;
+  } catch (err) {
+    errorMsg.textContent = "❌ " + err.message;
+  }
+});
 
-        if (initialMode === 'signup') setMode('signup');
-        else setMode('login');
-
-        function redirectAfterLogin() {
-          let dest = 'index.html';
-          if (orderParam) dest = 'lucky-spin.html?order=' + encodeURIComponent(orderParam);
-          if (tableParam) dest += (dest.includes('?') ? '&' : '?') + 'table=' + encodeURIComponent(tableParam);
-          window.location.href = dest;
-        }
-
-        // 🚨 Disabled auto redirect for testing
-        // auth.onAuthStateChanged(user => { if (user) redirectAfterLogin(); });
-
-        document.getElementById('authForm').addEventListener('submit', function (e) {
-          e.preventDefault();
-          msg.innerHTML = '';
-          submitBtn.disabled = true;
-
-          const email = (document.getElementById('email').value || '').trim();
-          const password = (document.getElementById('password').value || '').trim();
-          const name = (document.getElementById('name').value || '').trim();
-
-          if (!email || !password) {
-            msg.innerHTML = '<div class="err">Email and password are required.</div>';
-            submitBtn.disabled = false;
-            return;
-          }
-
-          if (mode === 'signup') {
-            auth.createUserWithEmailAndPassword(email, password)
-              .then(cred => {
-                const u = cred.user;
-                return db.collection('users').doc(u.uid).set({
-                  name: name || '',
-                  email: email,
-                  createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }, { merge: true }).then(() => {
-                  return u.updateProfile({ displayName: name || '' });
-                });
-              })
-              .then(() => {
-                msg.innerHTML = '<div class="ok">Account created. Redirecting…</div>';
-                setTimeout(redirectAfterLogin, 700);
-              })
-              .catch(err => {
-                console.error(err);
-                msg.innerHTML = '<div class="err">' + err.message + '</div>';
-              })
-              .finally(() => { submitBtn.disabled = false; });
-          } else {
-            auth.signInWithEmailAndPassword(email, password)
-              .then(() => {
-                msg.innerHTML = '<div class="ok">Welcome back! Redirecting…</div>';
-                setTimeout(redirectAfterLogin, 700);
-              })
-              .catch(err => {
-                console.error(err);
-                msg.innerHTML = '<div class="err">' + err.message + '</div>';
-              })
-              .finally(() => { submitBtn.disabled = false; });
-          }
-        });
-
-      } catch (err) {
-        console.error("Fatal error:", err);
-        document.body.innerHTML = "<pre style='color:red'>" + err.message + "</pre>";
-      }
-    });
   </script>
 </body>
 </html>

@@ -116,12 +116,40 @@
       .row { flex-direction: column; }
       .btn, .order-actions .btn { width: 100%; }
     }
+
+    .logout-container {
+      position: absolute;
+      top: 25px;
+      right: 20px;
+    }
+
+    #logoutBtn {
+      background: #d22c27;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    #logoutBtn:hover {
+      background: #a71d2a;
+    }
   </style>
 </head>
 <body>
+  <!-- ✅ Protect this page -->
+  <script type="module" src="auth-guard.js"></script>
+
   <header>
     <img src="Pes_logo.png" alt="Logo" class="logo">
     <h1>P.E.S. Canteen Panel</h1>
+    <div class="logout-container">
+      <button id="logoutBtn">Logout</button>
+    </div>
   </header>
 
   <main>
@@ -139,10 +167,14 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
     import {
+      getAuth, signOut
+    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+    import {
       getFirestore, collection, query, where, onSnapshot, getDocs,
       doc, getDoc, updateDoc, deleteDoc, serverTimestamp
     } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
+    // ✅ Firebase Config
     const firebaseConfig = {
       apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
       authDomain: "pes-canteen.firebaseapp.com",
@@ -155,6 +187,19 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // ✅ Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        const currentPath = window.location.pathname + window.location.search;
+        await signOut(auth);
+        sessionStorage.setItem("redirectAfterLogin", currentPath);
+        window.location.href = "login.html";
+      } catch (err) {
+        console.error("Logout failed", err);
+      }
+    });
 
     const ordersDiv = document.getElementById("orders");
     const toast = document.getElementById("toast");
@@ -319,6 +364,7 @@
     }
 
     findBtn.addEventListener('click', findOrder);
+    
   </script>
 </body>
 </html>

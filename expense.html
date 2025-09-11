@@ -78,10 +78,38 @@
     table { width: 100%; border-collapse: collapse; margin-top: 10px; }
     th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
     th { background: #f0f0f0; }
+
+.logout-container {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+}
+
+#logoutBtn {
+  background: #d22c27;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background 0.3s;
+}
+
+#logoutBtn:hover {
+  background: #a71d2a;
+}
+
   </style>
 </head>
+
 <body>
-  <header>Expense Manager</header>
+  <script type="module" src="auth-guard.js"></script>
+  <header>Expense Manager <div class="logout-container">
+  <button id="logoutBtn">Logout</button>
+</div>
+</header>
   <main>
     <!-- Expense Form -->
     <div class="form-box">
@@ -128,6 +156,39 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
   <script src="firebase-config.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
+    authDomain: "pes-canteen.firebaseapp.com",
+    projectId: "pes-canteen",
+    storageBucket: "pes-canteen.firebasestorage.app",
+    messagingSenderId: "398702472399",
+    appId: "1:398702472399:web:626587a3b358bd55075bba",
+    measurementId: "G-LL28HG6PDB"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  document.getElementById("logoutBtn").addEventListener("click", async () => {
+    try {
+      const currentPage = encodeURIComponent(window.location.pathname);
+
+      await signOut(auth);
+
+      // Redirect to login with ?redirect=currentPage
+      window.location.href = `login.html?redirect=${currentPage}`;
+    } catch (err) {
+      console.error("Logout error:", err);
+      alert("Error logging out. Please try again.");
+    }
+  });
+</script>
+
 
   <script>
     const expenseForm = document.getElementById("expenseForm");
