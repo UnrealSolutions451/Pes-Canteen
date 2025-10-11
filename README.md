@@ -6,16 +6,16 @@ This project is **actively used** by the college’s canteen for real-time order
 
 ---
 
-## 🚀 Features
+#  Features
 
-### 🧾 For Staff
+#  For Staff
 - Place and manage table-wise orders
 - Real-time menu with availability control
 - Update order status (Pending → Accepted → Completed)
 - Generate and mark bills as Paid (Online / Cash)
 - Automatic inventory deduction after completion
 
-### 👨‍💼 For Admin
+# For Admin
 - Manage menu and availability
 - View live analytics and expense summaries
 - Add, update, and manage staff details
@@ -24,7 +24,7 @@ This project is **actively used** by the college’s canteen for real-time order
 - Role-based login access (Admin / Staff)
 - Firebase-secured authentication and access control
 
-### 📊 General
+#  General
 - Beautiful, responsive, and consistent UI across pages
 - Firebase Firestore integration with real-time sync
 - Protected routes with `auth-guard.js`
@@ -32,7 +32,7 @@ This project is **actively used** by the college’s canteen for real-time order
 
 ---
 
-## 🛠️ Tech Stack
+#Tech Stack
 
 | Category | Technologies Used |
 |-----------|-------------------|
@@ -44,7 +44,7 @@ This project is **actively used** by the college’s canteen for real-time order
 
 ---
 
-## 🔐 Roles
+#  Roles
 
 - **Admin**
   - Full access to analytics, menu, expense, and staff modules.
