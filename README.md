@@ -57,7 +57,7 @@ Roles are assigned in the Firestore **`users`**
 
 [Mohammed Ahmed Ali]
 📧 [ahmed451ali@gmail.com]
-🔗 [LinkedIn Profile]
+🔗 [[LinkedIn Profile](https://www.linkedin.com/in/ahmed-ali-458a32193/)]
 🌐 [[GitHub Profile](https://github.com/Ahmed-451)]
 
 
