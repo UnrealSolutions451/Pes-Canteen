@@ -53,4 +53,11 @@ This project is **actively used** by the college’s canteen for real-time order
 - **Staff**
   - Restricted access to order placement and management pages only.
 
-Roles are assigned in the Firestore **`users`** collection:
+Roles are assigned in the Firestore **`users`**
+
+[Mohammed Ahmed Ali]
+📧 [ahmed451ali@gmail.com]
+🔗 [LinkedIn Profile]
+🌐 [[GitHub Profile](https://github.com/Ahmed-451)]
+
+
