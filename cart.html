@@ -47,7 +47,7 @@
 
     main {
       flex: 1;
-      padding-bottom: 160px; /* space for footer + nav */
+      padding-bottom: 160px;
     }
 
     .cart-container { padding: 15px; }
@@ -96,7 +96,7 @@
       gap: 10px;
     }
 
-    #placeOrder, #clearCart {
+    #checkoutBtn, #clearCart {
       padding: 10px 16px;
       border: none;
       border-radius: var(--border-radius);
@@ -106,8 +106,8 @@
       box-shadow: var(--shadow);
     }
 
-    #placeOrder { background: #008000; color: white; }
-    #placeOrder:hover { background: var(--secondary); }
+    #checkoutBtn { background: #008000; color: white; }
+    #checkoutBtn:hover { background: var(--secondary); }
 
     #clearCart {
       background: var(--accent);
@@ -161,10 +161,9 @@
       font-size: 0.7rem;
     }
 
-    /* Footer placed above nav bar */
     .site-footer {
       position: fixed;
-      bottom: 100px; /* height of bottom nav */
+      bottom: 100px;
       left: 0;
       right: 0;
       background: #03045e;
@@ -203,12 +202,11 @@
 
       <div class="cart-actions">
         <button id="clearCart">Clear Cart</button>
-        <button id="placeOrder">Place Order</button>
+        <button id="checkoutBtn">Proceed to Checkout / Pay</button>
       </div>
     </div>
   </main>
 
-  <!-- Footer just above bottom nav -->
   <footer class="site-footer">
     <p>
       <a href="terms.html">Terms & Conditions</a> | 
@@ -218,7 +216,6 @@
     <p class="copy">&copy; 2025 P.E.S. Canteen. All rights reserved.</p>
   </footer>
 
-  <!-- Bottom nav -->
   <div class="bottom-nav">
     <a href="index.html" class="nav-item" id="menuNav">
       <span class="nav-icon">🍔</span>
@@ -231,10 +228,8 @@
     </a>
   </div>
 
-  <!-- Firebase v9 SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     const params = new URLSearchParams(window.location.search);
     const tableId = params.get("table") || "default";
@@ -262,7 +257,6 @@
     };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
 
     let cart = JSON.parse(localStorage.getItem(CART_KEY)) || [];
     const cartDiv = document.getElementById("cart");
@@ -333,45 +327,24 @@
       }
     });
 
-    document.getElementById("placeOrder").addEventListener("click", async () => {
+    // ✅ Checkout button
+    document.getElementById("checkoutBtn").addEventListener("click", () => {
       if (cart.length === 0) {
         alert("Your cart is empty!");
         return;
       }
 
-      let tId = tableId;
-      if (!tId || tId.trim() === "" || tId === "default") {
-        tId = prompt("Enter your table number:");
-        if (!tId || tId.trim() === "") {
-          alert("Table number is required to place an order.");
-          return;
-        }
-      }
+      const totalAmount = cart.reduce((sum, item) => sum + item.price * (item.quantity || 1), 0);
 
-      const orderCode = "ORD-" + Math.floor(1000 + Math.random() * 9000);
-      const now = new Date();
-      const orderDate = now.toISOString().split("T")[0];
-      const orderTime = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      // Store cart temporarily for checkout page
+      localStorage.setItem("checkoutData", JSON.stringify({
+        cart,
+        totalAmount,
+        tableId,
+        sessionId
+      }));
 
-      try {
-        await addDoc(collection(db, "orders"), {
-          table: tId,
-          sessionId: sessionId,
-          items: cart,
-          status: "pending",
-          orderCode: orderCode,
-          date: orderDate,
-          time: orderTime,
-          createdAt: serverTimestamp(),
-          timestamp: serverTimestamp()
-        });
-
-        localStorage.removeItem(CART_KEY);
-        window.location.href = `order-confirmation.html?code=${orderCode}`;
-      } catch (err) {
-        console.error("Error placing order:", err);
-        alert("Error placing order. Please try again.");
-      }
+      window.location.href = `checkout.html?table=${tableId}&session=${sessionId}`;
     });
 
     renderCart();
