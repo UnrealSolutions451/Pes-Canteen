@@ -202,13 +202,28 @@
     </a>
   </div>
 
+    <!-- Put this at the bottom of your file in place of your current <script type="module"> block -->
   <script type="module">
-    import { db } from "./firebase-config.js"; 
-    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    // --- Use the same SDK version for everything (no mixing v9 and v10) ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
 
-    /* -------------------------
-       Session handling
-    ------------------------- */
+    // ---------- 1) Paste your firebase config here ----------
+    // Replace the object below with your actual Firebase config from the console:
+    const firebaseConfig = {
+      apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
+  authDomain: "pes-canteen.firebaseapp.com",
+  projectId: "pes-canteen",
+  storageBucket: "pes-canteen.firebasestorage.app",
+  messagingSenderId: "398702472399",
+  appId: "1:398702472399:web:626587a3b358bd55075bba",
+  measurementId: "G-LL28HG6PDB"    };
+
+    // ---------- 2) Initialize Firebase and Firestore ----------
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // ---------- 3) Session handling (kept from your original file) ----------
     const params = new URLSearchParams(window.location.search);
     const tableId = params.get("table") || "default";
     const sessionId = params.get("session");
@@ -218,13 +233,13 @@
 
     if (!sessionId || !sessionData.sessionId || sessionId !== sessionData.sessionId || now > sessionData.expiry) {
       // Redirect back if session invalid/expired
+      console.warn('Session invalid or expired, redirecting to landing.html');
       window.location.href = `landing.html?table=${tableId}`;
     }
 
-    function getCartKey() {
-      return `cart_${tableId}_${sessionId}`;
-    }
+    function getCartKey() { return `cart_${tableId}_${sessionId}`; }
 
+    // ---------- 4) DOM refs & state ----------
     const menuDiv = document.getElementById("menu");
     const categoryFiltersDiv = document.getElementById("categoryFilters");
     const cartNav = document.getElementById("cartNav");
@@ -336,21 +351,58 @@
       renderMenuItems(filtered);
     }
 
-    async function fetchAndInitMenu() {
+    // ---------- 5) Robust fetch with detailed logging & single retry ----------
+    function showLoadingUI() {
+      menuDiv.innerHTML = '<p id="menu-loading">Loading menu…</p>';
+    }
+
+    async function fetchMenuOnce() {
       try {
+        console.log('[Menu] fetching menu collection from Firestore...');
         const snap = await getDocs(collection(db, 'menu'));
+        console.log('[Menu] fetch completed, docs:', snap.size);
         allItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-        buildCategoryButtons();
-        renderMenu("All");
+        return snap.size;
       } catch (err) {
-        console.error('Error loading menu:', err);
-        menuDiv.innerHTML = '<p>Error loading menu.</p>';
+        console.error('[Menu] error fetching menu:', err);
+        throw err;
       }
     }
 
+    async function fetchAndInitMenu() {
+      showLoadingUI();
+      try {
+        const size = await fetchMenuOnce();
+        if (size === 0) {
+          // empty on first try — do a mild retry for transient issues
+          console.warn('[Menu] empty result on first fetch — retrying after 500ms');
+          await new Promise(r => setTimeout(r, 500));
+          const retrySize = await fetchMenuOnce();
+          if (retrySize === 0) {
+            console.warn('[Menu] still empty after retry. Rendering "No items".');
+            buildCategoryButtons();
+            renderMenu('All');
+            return;
+          }
+        }
+        buildCategoryButtons();
+        renderMenu('All');
+      } catch (err) {
+        // clear UI & show friendly message
+        menuDiv.innerHTML = '<p>Error loading menu. Open console to see details.</p>';
+      }
+    }
+
+    // ---------- 6) Wire up search + initial calls ----------
     searchInput.addEventListener("input", () => renderMenu(document.querySelector(".category-btn.active")?.dataset.category || "All"));
     fetchAndInitMenu();
     updateCartCount();
+
+    // ---------- 7) Helpful runtime checks for you to see in console ----------
+    console.log('[Index] Firebase initialized, projectId=', firebaseConfig.projectId);
+    // If db ends up undefined, this will help detect it early:
+    if (!db) console.error('[Index] Firestore db is undefined. Check firebaseConfig and SDK versions.');
   </script>
+
 </body>
 </html>
