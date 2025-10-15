@@ -322,7 +322,9 @@
         const card = document.createElement('div');
         card.className = 'menu-item-card';
         card.innerHTML = `
-          <img src="${img}" class="menu-item-image" alt="${item.name || 'Item'}">
+          <a href="description.html?id=${item.id}&table=${tableId}&session=${sessionId}">
+  <img src="${img}" class="menu-item-image" alt="${item.name || 'Item'}">
+</a>
           <div class="menu-item-info">
             <h3 class="menu-item-name">${item.name || 'Item'}</h3>
             <div class="price-icon-row">
