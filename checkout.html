@@ -21,7 +21,7 @@
 
     body {
       font-family: "Poppins", sans-serif;
-      background: var(--bg);
+      background: var(--background);
       margin: 0;
       padding: 0;
       color: var(--secondary);
@@ -90,7 +90,7 @@
 
     .item-price {
       font-weight: 600;
-      color: black
+      color: black;
     }
 
     .total-section {
@@ -102,9 +102,10 @@
       border-top: 2px dashed #ccc;
       padding-top: 1rem;
     }
-    .tp{
-        color: var(--price);
-      }
+
+    .tp {
+      color: var(--price);
+    }
 
     button {
       display: block;
@@ -121,7 +122,7 @@
     }
 
     button:hover {
-      background: #46a0fa;
+      background: var(--buttons);
     }
 
     footer {
@@ -130,6 +131,7 @@
       font-size: 0.9rem;
       color: #666;
     }
+
     .site-footer {
       background: #03045e;
       color: #fff;
@@ -138,15 +140,18 @@
       font-size: 14px;
       margin-top: 30px;
     }
+
     .site-footer a {
       color: #FFD166;
       text-decoration: none;
       margin: 0 6px;
       font-weight: 500;
     }
+
     .site-footer a:hover {
       text-decoration: underline;
     }
+
     .site-footer .copy {
       margin-top: 8px;
       font-size: 12px;
@@ -167,9 +172,9 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 0.5rem;
-        
       }
-      .tp{
+
+      .tp {
         color: var(--price);
       }
     }
@@ -193,16 +198,17 @@
 
   <footer class="site-footer">
     <p>
-        <a href="T&C.html">Terms & Conditions</a> | 
-        <a href="P&P.html">Privacy Policy</a> | 
-        <a href="R&R.html">Return & Refund Policy</a> | 
-        <a href="about.html">About Us</a>
-        </p>
+      <a href="T&C.html">Terms & Conditions</a> |
+      <a href="P&P.html">Privacy Policy</a> |
+      <a href="R&R.html">Return & Refund Policy</a> |
+      <a href="about.html">About Us</a>
+    </p>
     <p class="copy">&copy; 2025 P.E.S. Canteen. All rights reserved.</p>
   </footer>
+
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import { getFirestore, collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
     // Firebase config
     const firebaseConfig = {
@@ -272,41 +278,49 @@
       totalAmountEl.textContent = "₹" + total;
     }
 
-    // Payment simulation + Order placement
+    // ==============================
+    // 🚀 PHONEPE PAYMENT INTEGRATION
+    // ==============================
     payBtn.addEventListener("click", async () => {
       if (cart.length === 0) {
         alert("Your cart is empty!");
         return;
       }
 
-      // Simulate PhonePe Pay Page
-      const confirmPay = confirm("Redirecting to PhonePe Pay Page...\n(This is a test simulation.)\nPress OK to confirm payment.");
-      if (!confirmPay) return;
+      const orderPayload = {
+        table: tableId,
+        sessionId: sessionId,
+        items: cart,
+        total: cart.reduce((sum, i) => sum + i.price * (i.quantity || 1), 0),
+        currency: "INR"
+      };
 
-      const orderCode = "ORD-" + Math.floor(1000 + Math.random() * 9000);
-      const now = new Date();
-      const orderDate = now.toISOString().split("T")[0];
-      const orderTime = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      payBtn.disabled = true;
+      payBtn.textContent = "Redirecting...";
 
       try {
-        await addDoc(collection(db, "orders"), {
-          table: tableId,
-          sessionId: sessionId,
-          items: cart,
-          status: "pending",
-          orderCode: orderCode,
-          date: orderDate,
-          time: orderTime,
-          createdAt: serverTimestamp(),
-          timestamp: serverTimestamp()
+        // ⚠️ Change URL when deployed (e.g. https://your-backend.onrender.com/api/create-order)
+        const res = await fetch("http://localhost:4000/api/create-order", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(orderPayload)
         });
 
-        localStorage.removeItem(CART_KEY);
-        alert("Payment successful! Your order has been placed.");
-        window.location.href = `order-confirmation.html?code=${orderCode}`;
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Order creation failed");
+
+        if (data.checkoutUrl) {
+          window.location.href = data.checkoutUrl;
+        } else {
+          alert("No checkout URL returned from server.");
+          payBtn.disabled = false;
+          payBtn.textContent = "Proceed to Pay";
+        }
       } catch (err) {
-        console.error("Error placing order:", err);
-        alert("Error placing order. Please try again.");
+        console.error(err);
+        alert("Payment initiation failed: " + err.message);
+        payBtn.disabled = false;
+        payBtn.textContent = "Proceed to Pay";
       }
     });
   </script>
