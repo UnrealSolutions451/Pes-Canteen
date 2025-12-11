@@ -28,6 +28,7 @@
       text-align: center;
       font-size: 1.5rem;
       font-weight: 600;
+      position: relative;
     }
     main { padding: 20px; max-width: 1000px; margin: auto; }
 
@@ -36,7 +37,6 @@
       border-radius: var(--border-radius);
       box-shadow: var(--shadow);
       padding: 35px;
-      
       margin-bottom: 20px;
     }
     h2 { margin-bottom: 12px; font-size: 1.2rem; }
@@ -70,7 +70,6 @@
       padding: 14px;
       text-align: center;
       font-weight: 700;
-      /* font-size: large; */
       color: var(--primary);
     }
     .stat span { display: block; margin-top: 6px; font-size: 1.5rem; color:#28a745; }
@@ -79,37 +78,121 @@
     th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; }
     th { background: #f0f0f0; }
 
-.logout-container {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-}
+    .logout-container {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+    }
 
-#logoutBtn {
-  background: #d22c27;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: background 0.3s;
-}
+    #logoutBtn {
+      background: #d22c27;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    #logoutBtn:hover {
+      background: #a71d2a;
+    }
 
-#logoutBtn:hover {
-  background: #a71d2a;
-}
-
+    .admin-nav {
+    background: var(--primary, #03045e);
+    color: white;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+  }
+  .nav-logo {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 18px;
+  }
+  .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .nav-links a:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .nav-links a.active {
+    /* background: var(--accent, #FFD166); */
+    color: #FFD166;
+    font-weight: 700;
+  }
+  /* Mobile */
+  .nav-toggle {
+    display: none;
+    font-size: 1.4rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    .nav-links {
+      position: absolute;
+      top: 56px;
+      right: 0;
+      background: var(--primary, #03045e);
+      flex-direction: column;
+      width: 200px;
+      padding: 10px;
+      display: none;
+    }
+    .nav-links.show {
+      display: flex;
+    }
+    .nav-toggle {
+      display: block;
+    }
+  }
   </style>
 </head>
 
 <body>
   <script type="module" src="auth-guard.js"></script>
-  <header>Expense Manager <div class="logout-container">
-  <button id="logoutBtn">Logout</button>
-</div>
-</header>
+  <header>
+    Expense Manager
+    <div class="logout-container">
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+  <nav class="admin-nav">
+  <div class="nav-container">
+    <div class="nav-logo">P.E.S. Canteen — Admin</div>
+
+    <button class="nav-toggle" id="navToggle">☰</button>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="admin-dashboard.html">Dashboard</a></li>
+      <li><a href="analytics.html">Analytics</a></li>
+      <li><a href="expense.html">Expenses</a></li>
+      <li><a href="staff-managment.html">Staff</a></li>
+    </ul>
+  </div>
+</nav>
+
   <main>
     <!-- Expense Form -->
     <div class="form-box">
@@ -118,7 +201,6 @@
         <input type="date" id="date">        
         <input type="text" id="description" placeholder="Description" required>
         <input type="number" id="amount" placeholder="Amount (₹)" step="0.01" required>
-
         <button type="submit" style="background-color: #03045e;">Add Expense</button>
       </form>
     </div>
@@ -129,9 +211,9 @@
       <div class="stats-grid">
         <div class="stat">Today's Expense: <span id="todayExpense" style="color: #d22c27;">₹0</span></div>
         <div class="stat">Today's Sales: <span id="todaySales">₹0</span></div>
-        <div class="stat">This Month's Expense: <span id="monthExpense"style="color: #d22c27;">₹0</span></div>
+        <div class="stat">This Month's Expense: <span id="monthExpense" style="color: #d22c27;">₹0</span></div>
         <div class="stat">This Month's Sales: <span id="monthSales">₹0</span></div>
-        <div class="stat">Total Expense: <span id="totalExpense"style="color: #d22c27;">₹0</span></div>
+        <div class="stat">Total Expense: <span id="totalExpense" style="color: #d22c27;">₹0</span></div>
         <div class="stat">Total Sales: <span id="totalSales">₹0</span></div>
       </div>
     </div>
@@ -152,45 +234,27 @@
     </div>
   </main>
 
-  <!-- Firebase v8 -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  <script src="firebase-config.js"></script>
-
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-
-  const firebaseConfig = {
-    apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
-    authDomain: "pes-canteen.firebaseapp.com",
-    projectId: "pes-canteen",
-    storageBucket: "pes-canteen.firebasestorage.app",
-    messagingSenderId: "398702472399",
-    appId: "1:398702472399:web:626587a3b358bd55075bba",
-    measurementId: "G-LL28HG6PDB"
+    <script>
+  // Toggle mobile nav
+  document.getElementById("navToggle").onclick = () => {
+    document.getElementById("navLinks").classList.toggle("show");
   };
 
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    try {
-      const currentPage = encodeURIComponent(window.location.pathname);
-
-      await signOut(auth);
-
-      // Redirect to login with ?redirect=currentPage
-      window.location.href = `login.html?redirect=${currentPage}`;
-    } catch (err) {
-      console.error("Logout error:", err);
-      alert("Error logging out. Please try again.");
+  // Highlight current page
+  const links = document.querySelectorAll(".nav-links a");
+  links.forEach(link => {
+    if (link.href === window.location.href) {
+      link.classList.add("active");
     }
   });
 </script>
 
+  <!-- Firebase (v9 modular) -->
+  <script type="module">
+    import { db, auth } from "./firebase-config.js";
+    import { collection, addDoc, orderBy, query, onSnapshot } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-  <script>
     const expenseForm = document.getElementById("expenseForm");
     const expenseList = document.getElementById("expenseList");
 
@@ -201,7 +265,6 @@
     const todaySalesEl = document.getElementById("todaySales");
     const monthSalesEl = document.getElementById("monthSales");
     const totalSalesEl = document.getElementById("totalSales");
-    
 
     const todayDate = new Date().toISOString().split("T")[0];
     document.getElementById("date").value = todayDate;
@@ -217,15 +280,21 @@
       const desc = document.getElementById("description").value;
       const amt = parseFloat(document.getElementById("amount").value);
       const date = document.getElementById("date").value || todayDate;
-      await db.collection("expenses").add({ description: desc, amount: amt, date });
+
+      await addDoc(collection(db, "expenses"), {
+        description: desc,
+        amount: amt,
+        date
+      });
+
       expenseForm.reset();
       document.getElementById("date").value = todayDate;
     });
 
     // Load Expenses
-    db.collection("expenses").orderBy("date","desc").onSnapshot(snapshot => {
-      let expenses = [];
-      snapshot.forEach(doc => expenses.push({ id: doc.id, ...doc.data() }));
+    const expQ = query(collection(db, "expenses"), orderBy("date", "desc"));
+    onSnapshot(expQ, snapshot => {
+      let expenses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
       let todayExp = 0, monthExp = 0, totalExp = 0;
       const currentMonth = todayDate.slice(0,7);
@@ -244,12 +313,12 @@
       todayExpenseEl.textContent = `₹${todayExp.toFixed(2)}`;
       monthExpenseEl.textContent = `₹${monthExp.toFixed(2)}`;
       totalExpenseEl.textContent = `₹${totalExp.toFixed(2)}`;
-      
     });
 
-    // Load Sales (same logic as your dashboard)
-    db.collection("orders").orderBy("timestamp","desc").onSnapshot(snapshot => {
-      let orders = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+    // Load Sales
+    const salesQ = query(collection(db, "orders"), orderBy("timestamp", "desc"));
+    onSnapshot(salesQ, snapshot => {
+      let orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       let todaySales = 0, monthSales = 0, totalSales = 0;
       const currentMonth = todayDate.slice(0,7);
 
@@ -268,6 +337,18 @@
       todaySalesEl.textContent = `₹${todaySales}`;
       monthSalesEl.textContent = `₹${monthSales}`;
       totalSalesEl.textContent = `₹${totalSales}`;
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        const currentPage = encodeURIComponent(window.location.pathname);
+        await signOut(auth);
+        window.location.href = `login.html?redirect=${currentPage}`;
+      } catch (err) {
+        console.error("Logout error:", err);
+        alert("Error logging out. Please try again.");
+      }
     });
   </script>
 </body>

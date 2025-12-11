@@ -7,18 +7,18 @@
 
   <style>
     :root {
-    --primary: #03045e;
+      --primary: #03045e;
       --secondary: #46a0fa;
       --price: #d22c27;
       --buttons: #46a0fa;
-    --accent: #FFD166;
-    --background: #F7FFF7;
-    --text: #2b2c2d;
-    --card-bg: #FFFFFF;
-    --border-radius: 12px;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    --transition: all 0.3s ease;
-  }
+      --accent: #FFD166;
+      --background: #F7FFF7;
+      --text: #2b2c2d;
+      --card-bg: #FFFFFF;
+      --border-radius: 12px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
     body {
       font-family: Arial, sans-serif;
       background: #f7f7f7;
@@ -86,113 +86,76 @@
     input:checked + .slider:before {
       transform: translateX(26px);
     }
-  .logout-container {
-  position: absolute;
-  top: 15px;
-  right: 20px;
-}
 
-#logoutBtn {
-  background: #d22c27;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: bold;
-  transition: background 0.3s;
-}
-
-#logoutBtn:hover {
-  background: #a71d2a;
-}
-@media (max-width: 480px) {
-.logout-container {
-  position: absolute;
-  top: 25px;
-  right: 10px;
-}
-
-#logoutBtn {
-  background: #d22c27;
-  color: white;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  font-size: 15px;
-  font-weight: bold;
-  transition: background 0.3s;
-}
-
-#logoutBtn:hover {
-  background: #a71d2a;
-}
-
-}
-
+    .logout-container {
+      position: absolute;
+      top: 15px;
+      right: 20px;
+    }
+    #logoutBtn {
+      background: #d22c27;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+    #logoutBtn:hover {
+      background: #a71d2a;
+    }
+    @media (max-width: 480px) {
+      .logout-container {
+        top: 25px;
+        right: 10px;
+      }
+      #logoutBtn {
+        padding: 8px 12px;
+        font-size: 15px;
+      }
+    }
   </style>
 </head>
 <body>
-  
   <script type="module" src="auth-guard.js"></script>
-  <header>Menu Availability <div class="logout-container">
-  <button id="logoutBtn">⏻</button>
-</div></header>
+  <header>
+    Menu Availability
+    <div class="logout-container">
+      <button id="logoutBtn">⏻</button>
+    </div>
+  </header>
 
   <main>
     <div id="menuList">Loading menu items...</div>
   </main>
 
-  <!-- Firebase v8 SDK -->
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-  
-  <!-- Your Firebase Config -->
-  <script src="firebase-config.js"></script>
-  
   <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { db } from "./firebase-config.js";
+    import { collection, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
-    authDomain: "pes-canteen.firebaseapp.com",
-    projectId: "pes-canteen",
-    storageBucket: "pes-canteen.firebasestorage.app",
-    messagingSenderId: "398702472399",
-    appId: "1:398702472399:web:626587a3b358bd55075bba",
-    measurementId: "G-LL28HG6PDB"
-  };
-
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-
-  document.getElementById("logoutBtn").addEventListener("click", async () => {
-    try {
-      const currentPage = encodeURIComponent(window.location.pathname);
-
-      await signOut(auth);
-
-      // Redirect to login with ?redirect=currentPage
-      window.location.href = `login.html?redirect=${currentPage}`;
-    } catch (err) {
-      console.error("Logout error:", err);
-      alert("Error logging out. Please try again.");
-    }
-  });
-</script>
-
-
-  <script>
     const menuList = document.getElementById("menuList");
+    const auth = getAuth();
 
-    // Fetch menu items
-    db.collection("menu").onSnapshot(snapshot => {
+    // Logout handler
+    document.getElementById("logoutBtn").addEventListener("click", async () => {
+      try {
+        const currentPage = encodeURIComponent(window.location.pathname);
+        await signOut(auth);
+        window.location.href = `login.html?redirect=${currentPage}`;
+      } catch (err) {
+        console.error("Logout error:", err);
+        alert("Error logging out. Please try again.");
+      }
+    });
+
+    // Fetch menu items (Realtime listener)
+    onSnapshot(collection(db, "menu"), (snapshot) => {
       menuList.innerHTML = "";
-      snapshot.forEach(doc => {
-        const data = doc.data();
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
         const available = data.available === true;
 
         const itemDiv = document.createElement("div");
@@ -201,7 +164,7 @@
         itemDiv.innerHTML = `
           <span class="item-name">${data.name || "Unnamed Item"}</span>
           <label class="switch">
-            <input type="checkbox" ${available ? "checked" : ""} data-id="${doc.id}">
+            <input type="checkbox" ${available ? "checked" : ""} data-id="${docSnap.id}">
             <span class="slider"></span>
           </label>
         `;
@@ -210,12 +173,12 @@
       });
 
       // Add toggle listeners
-      document.querySelectorAll(".switch input").forEach(input => {
+      document.querySelectorAll(".switch input").forEach((input) => {
         input.addEventListener("change", async (e) => {
           const id = e.target.getAttribute("data-id");
           const isAvailable = e.target.checked;
           try {
-            await db.collection("menu").doc(id).update({ available: isAvailable });
+            await updateDoc(doc(db, "menu", id), { available: isAvailable });
             console.log(`Updated ${id} → available: ${isAvailable}`);
           } catch (err) {
             console.error("Error updating availability:", err);
