@@ -119,9 +119,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-    import { 
-      getFirestore, collection, setDoc, doc, getDocs, onSnapshot 
-    } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getFirestore, collection, setDoc, doc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
@@ -132,12 +130,11 @@
       appId: "1:398702472399:web:626587a3b358bd55075bba",
       measurementId: "G-LL28HG6PDB"
     };
-
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
 
-    // ===== Logout =====
+    // ✅ Logout
     document.getElementById("logoutBtn").addEventListener("click", async () => {
       try {
         const currentPath = window.location.pathname + window.location.search;
@@ -149,10 +146,10 @@
       }
     });
 
-    // ===== DOM =====
     const itemName = document.getElementById("itemName");
     const itemStock = document.getElementById("itemStock");
     const itemUnit = document.getElementById("itemUnit");
+    const itemMin = document.getElementById("itemMin");
     const saveItemBtn = document.getElementById("saveItem");
     const inventoryTable = document.getElementById("inventoryTable");
 
@@ -162,113 +159,96 @@
     const saveRecipeBtn = document.getElementById("saveRecipe");
     const recipeTable = document.getElementById("recipeTable");
 
-    // ======================================================
-    // REAL-TIME INVENTORY
-    // ======================================================
-    function listenInventory() {
-      const invRef = collection(db, "inventory");
+    // ----------------- INVENTORY (REAL-TIME) -----------------
+function listenInventory() {
+  const invRef = collection(db, "inventory");
 
-      onSnapshot(invRef, (snap) => {
-        inventoryTable.innerHTML = "";
+  onSnapshot(invRef, (snap) => {
+    inventoryTable.innerHTML = "";
 
-        snap.forEach(docSnap => {
-          const item = docSnap.data();
+    snap.forEach(docSnap => {
+      const item = docSnap.data();
+      const stock = (typeof item.stock === "number") ? item.stock.toFixed(4) : item.stock;
+      const minStock = (typeof item.minStock === "number") ? item.minStock.toFixed(4) : item.minStock;
 
-          const stock = (typeof item.stock === "number") ? item.stock.toFixed(4) : item.stock;
-          const minStock = item.minStock ? item.minStock.toFixed(4) : "-";
+      const low = parseFloat(item.stock) <= parseFloat(item.minStock)
+        ? `<span class='low-stock'>Low Stock</span>`
+        : "OK";
 
-          const low = item.minStock && parseFloat(item.stock) <= parseFloat(item.minStock)
-            ? `<span class='low-stock'>Low Stock</span>`
-            : "OK";
+      inventoryTable.innerHTML += `
+        <tr>
+          <td>${item.name}</td>
+          <td>${stock}</td>
+          <td>${item.unit}</td>
+          <td>${minStock}</td>
+          <td>${low}</td>
+        </tr>
+      `;
+    });
+  });
+}
 
-          inventoryTable.innerHTML += `
-            <tr>
-              <td>${item.name}</td>
-              <td>${stock}</td>
-              <td>${item.unit}</td>
-              <td>${minStock}</td>
-              <td>${low}</td>
-            </tr>
-          `;
-        });
-      });
-    }
 
-    // SAVE INVENTORY ITEM
     saveItemBtn.addEventListener("click", async () => {
       const name = itemName.value.trim();
       const stock = parseFloat(itemStock.value);
       const unit = itemUnit.value.trim();
+      const min = parseFloat(itemMin.value);
 
-      if (!name || isNaN(stock) || !unit) {
+      if (!name || isNaN(stock) || !unit || isNaN(min)) {
         alert("Please fill all fields");
         return;
       }
 
       await setDoc(doc(db, "inventory", name), {
-        name,
-        stock,
-        unit,
-        minStock: 0
+        name, stock, unit, minStock: min
       });
 
       itemName.value = "";
       itemStock.value = "";
       itemUnit.value = "";
+      itemMin.value = "";
+      loadInventory();
     });
 
-    // ======================================================
-    // RECIPES
-    // ======================================================
-
-    // Load menu items into dropdown
+    // ----------------- RECIPES -----------------
     async function loadMenuItems() {
       menuItemSelect.innerHTML = `<option value="">-- Select Menu Item --</option>`;
       const snap = await getDocs(collection(db, "menu"));
-
       snap.forEach(docSnap => {
         const menu = docSnap.data();
-        menuItemSelect.innerHTML += `
-          <option value="${docSnap.id}">${menu.name || docSnap.id}</option>
-        `;
+        menuItemSelect.innerHTML += `<option value="${docSnap.id}">${menu.name || docSnap.id}</option>`;
       });
     }
 
-    // Load all recipes
     async function loadRecipes() {
       recipeTable.innerHTML = "";
       const menuSnap = await getDocs(collection(db, "menu"));
-
       for (const menuDoc of menuSnap.docs) {
         const menuData = menuDoc.data();
         const menuId = menuDoc.id;
-
         const recipeSnap = await getDocs(collection(db, `menu/${menuId}/recipe`));
 
         if (!recipeSnap.empty) {
-          let html = `
-            <div class="menu-block">
-              <div class="menu-title">${menuData.name || menuId}</div>
-              <table>
-                <thead><tr><th>Ingredient</th><th>Qty</th></tr></thead>
-                <tbody>
-          `;
+          let recipeHTML = `<div class="menu-block">
+            <div class="menu-title">${menuData.name || menuId}</div>
+            <table>
+              <thead><tr><th>Ingredient</th><th>Qty</th></tr></thead>
+              <tbody>`;
 
           recipeSnap.forEach(r => {
-            const ing = r.id;
+            const ingredientName = r.id; // doc id = ingredient name
             const rec = r.data();
-            const qty = rec.quantity || "-";
-
-            html += `<tr><td>${ing}</td><td>${qty}</td></tr>`;
+            const qty = rec.quantity || rec.qty || "-";
+            recipeHTML += `<tr><td>${ingredientName}</td><td>${qty}</td></tr>`;
           });
 
-          html += `</tbody></table></div>`;
-          recipeTable.innerHTML += html;
+          recipeHTML += `</tbody></table></div>`;
+          recipeTable.innerHTML += recipeHTML;
         }
       }
     }
 
-    // Save recipe
     saveRecipeBtn.addEventListener("click", async () => {
       const menuItem = menuItemSelect.value;
       const ingName = ingredientName.value.trim();
@@ -285,16 +265,14 @@
 
       ingredientName.value = "";
       ingredientQty.value = "";
-
       loadRecipes();
     });
 
-    // ===== INIT =====
+    // Initial load
     listenInventory();
     loadMenuItems();
-    loadRecipes();
+    listenRecipes(); 
 
-</script>
-
+  </script>
 </body>
 </html>
