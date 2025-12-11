@@ -115,7 +115,7 @@
     <div id="recipeTable"></div>
   </div>
 
-  
+  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
@@ -159,35 +159,25 @@
     const saveRecipeBtn = document.getElementById("saveRecipe");
     const recipeTable = document.getElementById("recipeTable");
 
-    // ----------------- INVENTORY (REAL-TIME) -----------------
-function listenInventory() {
-  const invRef = collection(db, "inventory");
-
-  onSnapshot(invRef, (snap) => {
-    inventoryTable.innerHTML = "";
-
-    snap.forEach(docSnap => {
-      const item = docSnap.data();
-      const stock = (typeof item.stock === "number") ? item.stock.toFixed(4) : item.stock;
-      const minStock = (typeof item.minStock === "number") ? item.minStock.toFixed(4) : item.minStock;
-
-      const low = parseFloat(item.stock) <= parseFloat(item.minStock)
-        ? `<span class='low-stock'>Low Stock</span>`
-        : "OK";
-
-      inventoryTable.innerHTML += `
-        <tr>
-          <td>${item.name}</td>
-          <td>${stock}</td>
-          <td>${item.unit}</td>
-          <td>${minStock}</td>
-          <td>${low}</td>
-        </tr>
-      `;
-    });
-  });
-}
-
+    // ----------------- INVENTORY -----------------
+    async function loadInventory() {
+      inventoryTable.innerHTML = "";
+      const snap = await getDocs(collection(db, "inventory"));
+      snap.forEach(docSnap => {
+        const item = docSnap.data();
+        const stock = (typeof item.stock === "number") ? item.stock.toFixed(3) : item.stock;
+        const minStock = (typeof item.minStock === "number") ? item.minStock.toFixed(3) : item.minStock;
+        const low = parseFloat(item.stock) <= parseFloat(item.minStock) ? `<span class='low-stock'>Low Stock</span>` : "OK";
+        inventoryTable.innerHTML += `
+          <tr>
+            <td>${item.name}</td>
+            <td>${stock}</td>
+            <td>${item.unit}</td>
+            <td>${minStock}</td>
+            <td>${low}</td>
+          </tr>`;
+      });
+    }
 
     saveItemBtn.addEventListener("click", async () => {
       const name = itemName.value.trim();
@@ -269,10 +259,9 @@ function listenInventory() {
     });
 
     // Initial load
-    listenInventory();
+    loadInventory();
     loadMenuItems();
-    listenRecipes(); 
-
+    loadRecipes();
   </script>
 </body>
 </html>
