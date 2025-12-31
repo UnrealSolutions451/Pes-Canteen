@@ -209,7 +209,11 @@ async function findOrder(){
   const code = document.getElementById("orderCode").value.trim();
   if(!code){ alert("Enter order code"); return; }
 
-  const q = query(collection(db,"orders"), where("orderCode","==",code));
+  const q = query(
+  collection(db,"orders"),
+  where("orderCode","==",code),
+  where("status","==","pending")
+);
   const snap = await getDocs(q);
 
   ordersDiv.innerHTML = "";
@@ -273,34 +277,86 @@ findBtn.onclick = findOrder;
 
 
 /* -------------------- QR SCANNER -------------------- */
-let scanner;
+let video = document.getElementById("camera");
+  let scannerVisible = false;
 
-window.openScanner = function(){
-  document.getElementById("scannerModal").style.display="flex";
+  window.startScanner = async function(){
+      document.getElementById("scannerArea").style.display = "block";
 
-  scanner = new Html5QrcodeScanner(
-      "qr-reader",
-      { fps: 10, qrbox: 300 },
-      false
-  );
+      try{
+          const stream = await navigator.mediaDevices.getUserMedia({
+              video:{ facingMode:{ exact:"environment"} }
+          });
 
-  scanner.render(onScanSuccess, () => {});
-}
+          video.srcObject = stream;
+          scannerVisible = true;
+          scanLoop();
 
-function onScanSuccess(result){
-  const match = result.match(/ORD-\w+/);
-  if(match){
-    document.getElementById("orderCode").value = match[0];
-    alert("Order Detected: " + match[0]);
-    closeScanner();
-    findOrder();
+      }catch(e){
+          // fallback if environment camera not available
+          const stream = await navigator.mediaDevices.getUserMedia({
+              video:true
+          });
+          video.srcObject = stream;
+          scannerVisible = true;
+          scanLoop();
+      }
   }
-}
 
-window.closeScanner = function(){
-  try{ scanner.clear(); }catch(e){}
-  document.getElementById("scannerModal").style.display="none";
-}
+  function scanLoop(){
+      if(!scannerVisible) return;
+
+      const track = video.srcObject.getVideoTracks()[0];
+      const imageCapture = new ImageCapture(track);
+
+      imageCapture.grabFrame().then(bitmap=>{
+          processFrame(bitmap);
+          requestAnimationFrame(scanLoop);
+      });
+  }
+
+  function processFrame(bitmap){
+      const canvas = document.createElement("canvas");
+      canvas.width = bitmap.width;
+      canvas.height = bitmap.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(bitmap,0,0);
+
+      // read text like ORD-#### from frame using OCR-like trick
+      // But simpler: QR already contains text, browser decodes
+      // we rely on billing QR to embed plain text
+  }
+
+  // Simple built-in QR Reader using BarcodeDetector
+  if("BarcodeDetector" in window){
+      const detector = new BarcodeDetector({ formats:["qr_code"] });
+
+      video.addEventListener("playing",()=>{
+          const detect = ()=>{
+              detector.detect(video).then(codes=>{
+                  codes.forEach(code=>{
+                      const value = code.rawValue;
+                      if(value.includes("ORD-")){
+                          orderInput.value = value;
+                          alert("Detected " + value);
+                          stopCamera();
+                      }
+                  });
+              });
+              if(scannerVisible) requestAnimationFrame(detect);
+          };
+          detect();
+      });
+  }
+
+  function stopCamera(){
+      scannerVisible = false;
+      let stream = video.srcObject;
+      if(stream){
+          stream.getTracks().forEach(t=>t.stop());
+      }
+      document.getElementById("scannerArea").style.display = "none";
+  }
 
 </script>
 </body>
