@@ -18,7 +18,13 @@
     body { background: linear-gradient(180deg,#eaf2ff 0%, #f8fbff 100%); color: var(--text); min-height:100vh; padding:20px; }
     header { text-align:center; margin-bottom:18px; }
     header h1 { color: var(--primary); font-size:1.8rem; letter-spacing:0.4px; }
-    .orders-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(360px,1fr)); gap:18px; max-width:1200px; margin:0 auto; }
+    .orders-grid { 
+      display:grid; 
+      grid-template-columns: repeat(auto-fill, minmax(360px,1fr)); 
+      gap:18px; 
+      max-width:1200px; 
+      margin:0 auto; 
+    }
     .kot-card { background:var(--card-bg); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px; display:flex; flex-direction:column; gap:12px; }
     .kot-head { display:flex; justify-content:space-between; align-items:center; gap:12px; }
     .kot-table { font-weight:800; color:var(--primary); font-size:1.05rem; }
@@ -31,134 +37,157 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>KOT — Accepted Orders (Kitchen)</h1>
-    
-  </header>
 
-  <main>
-    <div id="orders" class="orders-grid"></div>
-    <div id="empty" class="empty" style="display:none;">No accepted orders at the moment.</div>
-  </main>
+<header>
+  <h1>KOT — Accepted Orders (Kitchen)</h1>
+</header>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
-    import {
-      getFirestore, collection, query, where, onSnapshot, getDocs,
-      doc
-    } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+<main>
+  <div id="orders" class="orders-grid"></div>
+  <div id="empty" class="empty" style="display:none;">No accepted orders at the moment.</div>
+</main>
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
-      authDomain: "pes-canteen.firebaseapp.com",
-      projectId: "pes-canteen",
-      storageBucket: "pes-canteen.firebasestorage.app",
-      messagingSenderId: "398702472399",
-      appId: "1:398702472399:web:626587a3b358bd55075bba",
-      measurementId: "G-LL28HG6PDB"
-    };
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+  import {
+    getFirestore, collection, query, where, onSnapshot, getDocs
+  } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+  const firebaseConfig = {
+    apiKey: "AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
+    authDomain: "pes-canteen.firebaseapp.com",
+    projectId: "pes-canteen",
+    storageBucket: "pes-canteen.firebasestorage.app",
+    messagingSenderId: "398702472399",
+    appId: "1:398702472399:web:626587a3b358bd55075bba"
+  };
 
-    const ordersDiv = document.getElementById("orders");
-    const emptyDiv = document.getElementById("empty");
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    async function fetchOrderItems(order) {
-      try {
-        const itemsRef = collection(db, "orders", order.id, "items");
-        const itemsSnap = await getDocs(itemsRef);
-        if (!itemsSnap.empty) {
-          return itemsSnap.docs.map(d => {
-            const data = d.data();
-            return {
-              name: data.name || d.id,
-              quantity: Number(data.quantity ?? data.qty ?? 1),
-              price: Number(data.price ?? 0)
-            };
-          });
-        }
+  const ordersDiv = document.getElementById("orders");
+  const emptyDiv = document.getElementById("empty");
 
-        if (Array.isArray(order.items) && order.items.length) {
-          return order.items.map(it => ({
-            name: it.name || it.itemName || it.id,
-            quantity: Number(it.quantity ?? it.qty ?? 1),
-            price: Number(it.price ?? 0)
-          }));
-        }
+  // 🔔 Bell sound
+  const bellAudio = new Audio("./bell.mp3");
+  bellAudio.preload = "auto";
 
-        return [];
-      } catch (err) {
-        console.error("Error fetching order items:", err);
-        return [];
+  function speak(text) {
+    if (!("speechSynthesis" in window)) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = "en-IN";
+    speechSynthesis.cancel();
+    speechSynthesis.speak(utter);
+  }
+
+  const announcedOrders = new Set();
+
+  async function fetchOrderItems(order) {
+    try {
+      const itemsRef = collection(db, "orders", order.id, "items");
+      const itemsSnap = await getDocs(itemsRef);
+      if (!itemsSnap.empty) {
+        return itemsSnap.docs.map(d => {
+          const data = d.data();
+          return {
+            name: data.name || d.id,
+            quantity: Number(data.quantity ?? 1),
+            price: Number(data.price ?? 0)
+          };
+        });
       }
+      return Array.isArray(order.items) ? order.items : [];
+    } catch {
+      return [];
     }
+  }
 
-    function escapeHtml(s) {
-      return String(s ?? "").replace(/[&<>"]/g, c => ({
-        '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
-      })[c]);
-    }
+  function buildOrderSpeech(items) {
+    if (!items.length) return "New order received.";
+    return "New order received. " + items.map(i => `${i.quantity} ${i.name}`).join(" and ");
+  }
 
-    function renderCard(order, items) {
-      const card = document.createElement("div");
-      card.className = "kot-card";
+  function escapeHtml(s) {
+    return String(s ?? "").replace(/[&<>"]/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'
+    })[c]);
+  }
 
-      const total = order.totalAmount ?? items.reduce((s,i)=>s+(i.price*i.quantity),0);
+  function renderCard(order, items) {
+    const card = document.createElement("div");
+    card.className = "kot-card";
 
-      const itemsHtml = items.length
-        ? items.map(i => `<div class="kot-item"><div>${escapeHtml(i.name)}</div><div>${i.quantity} × ${i.price}</div></div>`).join("")
-        : `<div style="color:#a00;font-weight:700">No items found</div>`;
+    const total = order.totalAmount ?? items.reduce((s,i)=>s+(i.price*i.quantity),0);
 
-      card.innerHTML = `
-        <div class="kot-head">
-          <div>
-            <div class="kot-table">Table ${escapeHtml(order.table || "-")}</div>
-            <div class="kot-code">Code: ${escapeHtml(order.orderCode || order.id)}</div>
-          </div>
-          <div style="font-weight:800; color:#333">₹${total}</div>
+    card.innerHTML = `
+      <div class="kot-head">
+        <div>
+          <div class="kot-table">Table ${escapeHtml(order.table || "-")}</div>
+          <div class="kot-code">Code: ${escapeHtml(order.orderCode || order.id)}</div>
         </div>
+        <div style="font-weight:800;">₹${total}</div>
+      </div>
 
-        <div class="kot-items">${itemsHtml}</div>
+      <div class="kot-items">
+        ${items.map(i => `
+          <div class="kot-item">
+            <div>${escapeHtml(i.name)}</div>
+            <div>${i.quantity} × ${i.price}</div>
+          </div>`).join("")}
+      </div>
 
-        <div class="kot-meta">
-          <div>Time: ${escapeHtml(order.time || "-")}</div>
-          <div>Date: ${escapeHtml(order.date || "-")}</div>
-        </div>
-      `;
+      <div class="kot-meta">
+        <div>Time: ${escapeHtml(order.time || "-")}</div>
+        <div>Date: ${escapeHtml(order.date || "-")}</div>
+      </div>
+    `;
+    return card;
+  }
 
-      return card;
+  async function renderOrders(orders) {
+    ordersDiv.innerHTML = "";
+    if (!orders.length) {
+      emptyDiv.style.display = "block";
+      return;
     }
+    emptyDiv.style.display = "none";
 
-    async function renderOrders(orders) {
-      ordersDiv.innerHTML = "";
-      if (!orders.length) {
-        emptyDiv.style.display = "block";
-        return;
-      }
-      emptyDiv.style.display = "none";
-
-      const results = await Promise.all(
-        orders.map(async o => ({
-          order: o,
-          items: await fetchOrderItems(o)
-        }))
-      );
-
-      results.forEach(r => ordersDiv.appendChild(renderCard(r.order, r.items)));
+    for (const o of orders) {
+      const items = await fetchOrderItems(o);
+      ordersDiv.appendChild(renderCard(o, items));
     }
+  }
 
-    const acceptedQ = query(collection(db, "orders"), where("status", "==", "accepted"));
-    onSnapshot(acceptedQ, snapshot => {
-      const orders = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
-      orders.sort((a,b) => {
-        const ta = a.timestamp?.toMillis?.() ?? 0;
-        const tb = b.timestamp?.toMillis?.() ?? 0;
-        return tb - ta;
-      });
-      renderOrders(orders);
+  const acceptedQ = query(collection(db, "orders"), where("status", "==", "accepted"));
+
+  onSnapshot(acceptedQ, async snapshot => {
+    const orders = snapshot.docs.map(d => ({ ...d.data(), id: d.id }));
+
+    // ✅ OLDEST FIRST (LEFT → RIGHT)
+    orders.sort((a,b) => {
+      const ta = a.timestamp?.toMillis?.() ?? 0;
+      const tb = b.timestamp?.toMillis?.() ?? 0;
+      return ta - tb;
     });
 
-  </script>
+    for (const order of orders) {
+      if (!announcedOrders.has(order.id)) {
+        announcedOrders.add(order.id);
+        const items = await fetchOrderItems(order);
+        bellAudio.currentTime = 0;
+        bellAudio.play().catch(()=>{});
+        setTimeout(() => speak(buildOrderSpeech(items)), 700);
+      }
+    }
+
+    renderOrders(orders);
+  });
+
+  document.body.addEventListener("click", () => {
+    bellAudio.play().catch(()=>{});
+  }, { once: true });
+
+</script>
+
 </body>
 </html>
