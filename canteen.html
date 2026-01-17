@@ -250,7 +250,7 @@ document.body.addEventListener("click",e=>{
 
 /* PAYMENT */
 window.openPayment=(amt,id)=>{
-  const upi="7507374446-ippb@ybl";
+  const upi="Q099759199@ybl";
   const link=`upi://pay?pa=${upi}&pn=Canteen&am=${amt}&cu=INR&tn=${id}`;
   qrImage.src=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
   amountText.innerText="Amount: ₹"+amt;
