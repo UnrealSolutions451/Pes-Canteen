@@ -205,7 +205,8 @@
     <ul class="nav-links" id="navLinks">
       <li><a href="canteen.html">Canteen Panel</a></li>
       <li><a href="menumanagment.html">Menu</a></li>
-      <li><a href="AddMenu.html">Staff Attendance</a></li>
+      <li><a href="AddMenu.html">Add/Edit Menu</a></li>
+      <li><a href="staff-attendance.html">Staff Attendance</a></li>
       <li><a href="KOT.html">KOT</a></li>
       <li><a href="Ready.html">Ready Screen</a></li>
       
@@ -230,7 +231,7 @@
       try {
         const currentPage = encodeURIComponent(window.location.pathname);
         await signOut(auth);
-        window.location.href = `login.html?redirect=${currentPage}`;
+        window.location.href = `loginMain.html?redirect=${currentPage}`;
       } catch (err) {
         console.error("Logout error:", err);
         alert("Error logging out. Please try again.");
