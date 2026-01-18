@@ -398,7 +398,7 @@
       try {
         const currentPage = encodeURIComponent(window.location.pathname);
         await signOut(auth);
-        window.location.href = `login.html?redirect=${currentPage}`;
+        window.location.href = `loginMain.html?redirect=${currentPage}`;
       } catch (err) {
         console.error("Logout error:", err);
         alert("Error logging out. Please try again.");
