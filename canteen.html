@@ -9,10 +9,7 @@
   <script src="https://unpkg.com/html5-qrcode"></script>
 
   <style>
-    :root {
-      --primary:#03045e; --price:#d22c27; --bg:#F7FFF7; --text:#292F36;
-      --shadow:0 4px 6px rgba(0,0,0,.1);
-    }
+    :root { --primary:#03045e; --bg:#F7FFF7; --shadow:0 4px 6px rgba(0,0,0,.1); }
     *{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',system-ui}
     body{background:var(--bg);min-height:100vh;display:flex;flex-direction:column}
 
@@ -25,7 +22,6 @@
     #logoutBtn{background:#d22c27;color:#fff;border:none;padding:8px 16px;border-radius:20px}
 
     main{padding:16px;max-width:1300px;margin:auto;width:100%}
-
     .row{display:flex;gap:10px;margin:10px 0 18px;flex-wrap:wrap}
     .input{flex:1;padding:12px;border:1px solid #ddd;border-radius:10px}
     .btn{padding:10px 16px;border:none;border-radius:10px;font-weight:600;cursor:pointer;box-shadow:var(--shadow)}
@@ -34,46 +30,22 @@
     .btn-danger{background:#ff6a00;color:#fff}
     .btn-pay{background:#1a8f3d;color:#fff}
 
-    /* ----- COLUMNS + SEPARATOR ----- */
-    .columns-wrap{
-      display:grid;
-      grid-template-columns:1fr 1px 1fr;
-      gap:16px;
-      align-items:start;
-    }
-    .divider{
-      background:#d0d7e2;
-      width:1px;
-      height:100%;
-    }
-    @media(max-width:900px){
-      .columns-wrap{grid-template-columns:1fr}
-      .divider{display:none}
-    }
+    .columns-wrap{display:grid;grid-template-columns:1fr 1px 1fr;gap:16px}
+    .divider{background:#d0d7e2;width:1px}
+    @media(max-width:900px){.columns-wrap{grid-template-columns:1fr}.divider{display:none}}
 
     h2{text-align:center;margin-bottom:10px}
-
     .orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 
-    .order-card{
-      background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow);
-      transition:.2s
-    }
-    .order-card.highlight{
-      outline:4px solid #46a0fa;
-      box-shadow:0 0 0 6px rgba(70,160,250,.25);
-    }
-
-    .order-head{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px}
+    .order-card{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow)}
+    .order-card.highlight{outline:4px solid #46a0fa;box-shadow:0 0 0 6px rgba(70,160,250,.25)}
+    .order-head{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
     .status{padding:5px 10px;border-radius:20px;font-size:.8rem;font-weight:700}
-    .pending{background:#ffe3e3}
-    .accepted{background:#fff8c5}
-    .ready{background:#d3ffd3}
+    .pending{background:#ffe3e3}.accepted{background:#fff8c5}.ready{background:#d3ffd3}
 
     .order-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
     .order-actions .btn{flex:1}
 
-    /* MODALS */
     .payment-modal,.scanner-modal{
       position:fixed;inset:0;background:rgba(0,0,0,.7);
       display:none;align-items:center;justify-content:center;z-index:1000
@@ -82,8 +54,79 @@
       background:#fff;padding:20px;border-radius:14px;width:95%;max-width:400px;text-align:center
     }
     .payment-box img{width:230px;height:230px;margin-top:10px}
+    .pay-options{display:flex;gap:10px;margin-top:10px}
     .closeBtn{margin-top:12px;padding:8px 14px;border:none;border-radius:8px;background:#d22c27;color:#fff}
     #qr-reader{width:100%}
+  
+          .admin-nav {
+    background: var(--primary, #03045e);
+    color: white;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+  }
+  .nav-logo {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .nav-links {
+    list-style: none;
+    display: flex;
+    gap: 18px;
+  }
+  .nav-links a {
+    color: white;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 6px 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+  }
+  .nav-links a:hover {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  .nav-links a.active {
+    /* background: var(--accent, #FFD166); */
+    color: #FFD166;
+    font-weight: 700;
+  }
+  /* Mobile */
+  .nav-toggle {
+    display: none;
+    font-size: 1.4rem;
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+  }
+  @media (max-width: 768px) {
+    .nav-links {
+      position: absolute;
+      top: 56px;
+      right: 0;
+      background: var(--primary, #03045e);
+      flex-direction: column;
+      width: 200px;
+      padding: 10px;
+      display: none;
+    }
+    .nav-links.show {
+      display: flex;
+    }
+    .nav-toggle {
+      display: block;
+    }
+  }
+  
   </style>
 </head>
 
@@ -95,7 +138,23 @@
   <h1>P.E.S. Canteen Panel</h1>
   <div class="logout-container"><button id="logoutBtn">Logout</button></div>
 </header>
+  
+<nav class="admin-nav">
+  <div class="nav-container">
+    <div class="nav-logo"></div>
 
+    <button class="nav-toggle" id="navToggle">☰</button>
+
+    <ul class="nav-links" id="navLinks">
+      <li><a href="canteen.html">Canteen Panel</a></li>
+      <li><a href="menumanagment.html">Menu</a></li>
+      <li><a href="staff-managment.html">Staff Management</a></li>
+      <li><a href="KOT.html">KOT</a></li>
+      <li><a href="Ready.html">Ready Screen</a></li>
+      
+    </ul>
+  </div>
+</nav>
 <main>
   <div class="row">
     <input id="searchCode" class="input" placeholder="Search / Scan Order Code">
@@ -121,9 +180,16 @@
 <!-- PAYMENT -->
 <div class="payment-modal" id="paymentModal">
   <div class="payment-box">
-    <h3>Scan & Pay</h3>
+    <h3>Select Payment Mode</h3>
     <p id="amountText"></p>
-    <img id="qrImage">
+
+    <div id="payOptions" class="pay-options">
+      <button class="btn btn-primary" id="cashBtn">Cash</button>
+      <button class="btn btn-pay" id="onlineBtn">Online</button>
+    </div>
+
+    <img id="qrImage" style="display:none">
+
     <button class="closeBtn" onclick="closePayment()">Close</button>
   </div>
 </div>
@@ -163,6 +229,7 @@ logoutBtn.onclick=async()=>{await signOut(auth);location.href="login.html"}
 const pendingDiv=document.getElementById("pendingOrders");
 const acceptedDiv=document.getElementById("acceptedOrders");
 let highlighted=null;
+let currentPayOrder=null;
 
 /* LIVE ORDERS */
 onSnapshot(query(collection(db,"orders")),snap=>{
@@ -174,17 +241,6 @@ onSnapshot(query(collection(db,"orders")),snap=>{
   });
   render(pending,pendingDiv,true);
   render(accepted,acceptedDiv,false);
-
-  // keep highlight if order still exists
-  if(highlighted){
-    const id=highlighted.id;
-    const newEl=document.getElementById(id);
-    if(newEl){
-      highlighted.classList.remove("highlight");
-      highlighted=newEl;
-      highlighted.classList.add("highlight");
-    }
-  }
 });
 
 /* RENDER */
@@ -218,14 +274,14 @@ function render(list,container,showPay){
     if(o.status==="pending"){btns[i++].onclick=()=>setStat(o.id,"accepted")}
     if(o.status==="accepted"){btns[i++].onclick=()=>setStat(o.id,"ready")}
     if(o.status==="ready"){btns[i++].onclick=()=>setStat(o.id,"completed")}
-    if(showPay){btns[i++].onclick=()=>openPayment(total,o.orderCode)}
+    if(showPay){btns[i++].onclick=()=>openPayment(o,total)}
     btns[i].onclick=()=>del(o.id);
 
     container.appendChild(div);
   });
 }
 
-/* ACTIONS */
+/* STATUS + DELETE */
 const setStat=(id,s)=>updateDoc(doc(db,"orders",id),{status:s,timestamp:serverTimestamp()});
 const del=id=>confirm("Delete?")&&deleteDoc(doc(db,"orders",id));
 
@@ -234,29 +290,53 @@ function highlightOrder(code){
   const el=document.getElementById("order-"+code);
   if(el){
     if(highlighted)highlighted.classList.remove("highlight");
-    highlighted=el;
-    el.classList.add("highlight");
+    highlighted=el; el.classList.add("highlight");
     el.scrollIntoView({behavior:"smooth",block:"center"});
   }
 }
-
-findBtn.onclick=()=>{ const code=searchCode.value.trim(); if(code) highlightOrder(code); };
-
+findBtn.onclick=()=>{ const c=searchCode.value.trim(); if(c) highlightOrder(c); };
 document.body.addEventListener("click",e=>{
   if(highlighted&&!e.target.closest(".order-card")){
     highlighted.classList.remove("highlight"); highlighted=null;
   }
 });
 
-/* PAYMENT */
-window.openPayment=(amt,id)=>{
-  const upi="Q099759199@ybl";
-  const link=`upi://pay?pa=${upi}&pn=Canteen&am=${amt}&cu=INR&tn=${id}`;
-  qrImage.src=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
+/* PAYMENT FLOW */
+window.openPayment=(order,amt)=>{
+  currentPayOrder=order;
   amountText.innerText="Amount: ₹"+amt;
+  qrImage.style.display="none";
+  payOptions.style.display="flex";
   paymentModal.style.display="flex";
 };
-window.closePayment=()=>paymentModal.style.display="none";
+
+cashBtn.onclick=async()=>{
+  if(!currentPayOrder) return;
+  await updateDoc(doc(db,"orders",currentPayOrder.id),{
+    paymentMode:"cash",
+    paymentAt:serverTimestamp()
+  });
+  closePayment();
+};
+
+onlineBtn.onclick=async()=>{
+  if(!currentPayOrder) return;
+  await updateDoc(doc(db,"orders",currentPayOrder.id),{
+    paymentMode:"online",
+    paymentAt:serverTimestamp()
+  });
+
+  const upi="Q099759199@ybl";
+  const link=`upi://pay?pa=${upi}&pn=Canteen&am=${currentPayOrder.totalAmount||""}&cu=INR&tn=${currentPayOrder.orderCode}`;
+  qrImage.src=`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}`;
+  payOptions.style.display="none";
+  qrImage.style.display="block";
+};
+
+window.closePayment=()=>{
+  paymentModal.style.display="none";
+  currentPayOrder=null;
+};
 
 /* SCANNER */
 let scanner;
@@ -266,7 +346,7 @@ window.openScanner=()=>{
   scanner.render(text=>{
     searchCode.value=text;
     closeScanner();
-    highlightOrder(text);   // ✅ highlight from QR
+    highlightOrder(text);
   },()=>{});
 };
 window.closeScanner=()=>{try{scanner.clear()}catch{} scannerModal.style.display="none"};

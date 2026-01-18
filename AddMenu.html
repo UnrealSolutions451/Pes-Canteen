@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Menu Editor</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+:root{
+  --primary:#03045e; --bg:#F7FFF7; --shadow:0 4px 6px rgba(0,0,0,.1);
+  --danger:#ff6a00; --success:#1a8f3d;
+}
+*{box-sizing:border-box;font-family:'Segoe UI',system-ui}
+body{margin:0;background:var(--bg)}
+
+header{
+  background:var(--primary);color:#fff;height:90px;
+  display:flex;align-items:center;justify-content:center;
+  position:sticky;top:0;z-index:10;box-shadow:var(--shadow)
+}
+.logo{position:absolute;left:20px;max-height:70px}
+
+main{max-width:1200px;margin:auto;padding:16px}
+h2{text-align:center;margin:12px 0}
+
+.form-card{
+  background:#fff;border-radius:14px;padding:16px;box-shadow:var(--shadow);
+  max-width:700px;margin:auto;margin-bottom:20px
+}
+
+.field{margin-bottom:10px}
+.field label{font-size:.85rem;font-weight:600;display:block;margin-bottom:4px}
+
+input,textarea{
+  width:100%;padding:10px;border:1px solid #ddd;border-radius:8px
+}
+textarea{resize:vertical}
+
+.btn{
+  padding:10px 16px;border:none;border-radius:10px;
+  font-weight:600;cursor:pointer;box-shadow:var(--shadow)
+}
+.btn-primary{background:var(--primary);color:#fff}
+.btn-danger{background:var(--danger);color:#fff}
+.btn-success{background:var(--success);color:#fff}
+
+.menu-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+  gap:14px
+}
+.menu-card{
+  background:#fff;border-radius:14px;padding:12px;box-shadow:var(--shadow)
+}
+.menu-actions{display:flex;gap:8px;margin-top:8px}
+.menu-actions .btn{flex:1}
+.logout-container{position:absolute;top:20px;right:20px}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img src="Pes_logo.png" class="logo">
+  <h1>Menu Management</h1>
+  <div class="logout-container">
+    <button id="logoutBtn" class="btn btn-danger">Logout</button>
+  </div>
+</header>
+
+<main>
+<h2 id="formTitle">➕ Add / Edit Menu Item</h2>
+
+<!-- ADD NEW BUTTON -->
+<div style="text-align:center;margin-bottom:12px">
+  <button id="addNewBtn" class="btn btn-primary">➕ Add New Item</button>
+</div>
+
+<div class="form-card" id="formCard">
+  <div id="dynamicFields"></div>
+
+  <div style="display:flex;gap:10px;margin-top:12px">
+    <button class="btn btn-success" id="saveBtn">Save</button>
+    <button class="btn btn-danger" id="cancelEdit" style="display:none">Cancel</button>
+  </div>
+</div>
+
+<h2>📋 Current Menu</h2>
+<div id="menuGrid" class="menu-grid"></div>
+</main>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+
+const firebaseConfig = {
+  apiKey:"AIzaSyDQFOv3uq9uviBQOjJAdgSni1uyikGPgbo",
+  authDomain:"pes-canteen.firebaseapp.com",
+  projectId:"pes-canteen",
+  storageBucket:"pes-canteen.firebasestorage.app",
+  messagingSenderId:"398702472399",
+  appId:"1:398702472399:web:626587a3b358bd55075bba"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+const menuGrid = document.getElementById("menuGrid");
+const fieldsDiv = document.getElementById("dynamicFields");
+const formTitle = document.getElementById("formTitle");
+const cancelEdit = document.getElementById("cancelEdit");
+const saveBtn = document.getElementById("saveBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+
+let editId = null;
+let currentData = {};
+let currentUser = null;
+
+/* TEMPLATE FOR MENU ITEM */
+const menuTemplate = {
+  available: true,
+  category: "Food",
+  description: "",
+  image: "",
+  name: "",
+  price: 0
+};
+
+/* AUTH GUARD */
+onAuthStateChanged(auth, async user=>{
+  if(!user){
+    window.location.href = "login.html?redirect=AddMenu.html";
+    return;
+  }
+
+  const userDoc = await getDoc(doc(db,"users",user.uid));
+  if(!userDoc.exists() || userDoc.data().role !== "admin"){
+    alert("You are not authorized!");
+    await signOut(auth);
+    window.location.href="login.html";
+    return;
+  }
+
+  currentUser = user;
+  initMenu();
+});
+
+/* LOGOUT */
+logoutBtn.onclick = async()=>{ await signOut(auth); window.location.href="login.html"; }
+
+/* INITIALIZE MENU AFTER AUTH */
+function initMenu(){
+
+  /* LIVE MENU */
+  onSnapshot(collection(db,"menu"), snap => {
+    menuGrid.innerHTML="";
+    snap.forEach(docSnap=>{
+      const m = {...docSnap.data(), id:docSnap.id};
+      const div = document.createElement("div");
+      div.className="menu-card";
+      div.innerHTML = `
+        <b>${m.name || "No name"}</b>
+        <p>₹${m.price ?? "-"}</p>
+        <div class="menu-actions">
+          <button class="btn btn-primary">Edit</button>
+          <button class="btn btn-danger">Delete</button>
+        </div>
+      `;
+      div.querySelectorAll("button")[0].onclick = ()=>loadEdit(m);
+      div.querySelectorAll("button")[1].onclick = ()=>confirm("Delete?")&&deleteDoc(doc(db,"menu",m.id));
+      menuGrid.appendChild(div);
+    });
+  });
+
+  /* BUILD FORM DYNAMICALLY */
+  function buildForm(data){
+    fieldsDiv.innerHTML="";
+    currentData={...data};
+
+    Object.keys(menuTemplate).forEach(key=>{
+      const field = document.createElement("div");
+      field.className = "field";
+
+      const label = document.createElement("label");
+      label.innerText = key;
+
+      let input;
+      const val = data[key] ?? menuTemplate[key];
+
+      if(typeof menuTemplate[key]==="boolean"){
+        input = document.createElement("input");
+        input.type="checkbox";
+        input.checked = val;
+        input.onchange = e => currentData[key] = e.target.checked;
+      } else if(typeof menuTemplate[key]==="number"){
+        input = document.createElement("input");
+        input.type="number";
+        input.value = val;
+        input.oninput = e => currentData[key] = Number(e.target.value);
+      } else if(typeof val === "string" && val.length>60){
+        input = document.createElement("textarea");
+        input.value = val;
+        input.oninput = e => currentData[key] = e.target.value;
+      } else {
+        input = document.createElement("input");
+        input.type="text";
+        input.value = val;
+        input.oninput = e => currentData[key] = e.target.value;
+      }
+
+      field.appendChild(label);
+      field.appendChild(input);
+      fieldsDiv.appendChild(field);
+    });
+  }
+
+  /* LOAD EDIT */
+  function loadEdit(m){
+    editId = m.id;
+    formTitle.innerText = "✏️ Edit Menu Item";
+    cancelEdit.style.display = "inline-block";
+    buildForm(m);
+    document.getElementById("formCard").scrollIntoView({behavior:"smooth"});
+  }
+
+  /* SAVE */
+  saveBtn.onclick = async()=>{
+    if(!currentUser){ alert("Not authorized"); return; }
+    if(Object.keys(currentData).length===0){ alert("No data"); return; }
+    try{
+      if(editId){
+        await updateDoc(doc(db,"menu",editId), currentData);
+      } else {
+        await addDoc(collection(db,"menu"), currentData);
+      }
+      clearForm();
+    }catch(err){
+      console.error("Error saving menu:", err);
+      alert("Failed to save. Check console.");
+    }
+  }
+
+  /* ADD NEW ITEM BUTTON */
+  const addNewBtn = document.getElementById("addNewBtn");
+  addNewBtn.onclick = ()=>{
+    clearForm();
+    editId = null;
+    formTitle.innerText = "➕ Add New Menu Item";
+    buildForm(menuTemplate);
+    document.getElementById("formCard").scrollIntoView({behavior:"smooth"});
+  };
+
+  /* CANCEL */
+  cancelEdit.onclick = clearForm;
+
+  function clearForm(){
+    editId=null;
+    currentData={};
+    fieldsDiv.innerHTML="";
+    formTitle.innerText="➕ Add / Edit Menu Item";
+    cancelEdit.style.display="none";
+  }
+
+  console.log("PROJECT:", app.options.projectId);
+}
+</script>
+</body>
+</html>
