@@ -203,7 +203,7 @@
     color: #FFD166;
     font-weight: 700;
   }
-  /* Mobile */
+ /* Mobile */
   .nav-toggle {
     display: none;
     font-size: 1.4rem;
@@ -230,6 +230,14 @@
       display: block;
     }
   }
+
+  @media (max-width: 768px) {
+  header {
+    font-size: 1.4rem;   /* smaller text for tablets & mobiles */
+    padding: 12px 16px;  /* reduce height slightly */
+  }
+}
+
   </style>
 </head>
 <body>
@@ -409,3 +417,4 @@
   </script>
 </body>
 </html>
+
