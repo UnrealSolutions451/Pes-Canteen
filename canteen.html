@@ -37,9 +37,38 @@
     h2{text-align:center;margin-bottom:10px}
     .orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 
-    .order-card{background:#fff;border-radius:12px;padding:14px;box-shadow:var(--shadow)}
-    .order-card.highlight{outline:4px solid #46a0fa;box-shadow:0 0 0 6px rgba(70,160,250,.25)}
-    .order-head{display:flex;justify-content:space-between;gap:6px;flex-wrap:wrap}
+   .order-card{
+  background:#fff;
+  border-radius:12px;
+  padding:14px;
+  box-shadow:var(--shadow)
+}
+
+.order-card.highlight{
+  outline:4px solid #46a0fa;
+  box-shadow:0 0 0 6px rgba(70,160,250,.25)
+}
+
+.order-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:6px;
+}
+
+.status{
+  padding:5px 10px;
+  border-radius:20px;
+  font-size:.8rem;
+  font-weight:700;
+  align-self:flex-start;
+  white-space:nowrap;
+}
+.pending{background:#ffe3e3}
+.accepted{background:#fff8c5}
+.ready{background:#d3ffd3}
+
+
     .status{padding:5px 10px;border-radius:20px;font-size:.8rem;font-weight:700}
     .pending{background:#ffe3e3}.accepted{background:#fff8c5}.ready{background:#d3ffd3}
 
@@ -245,42 +274,68 @@ onSnapshot(query(collection(db,"orders")),snap=>{
 });
 
 /* RENDER */
-function render(list,container,showPay){
-  container.innerHTML="";
-  list.forEach(o=>{
-    const items=o.items||[]; let total=0;
-    const txt=items.map(i=>{const q=i.quantity||1,p=i.price||0;total+=q*p;return`${i.name} x ${q}`});
+function render(list, container, showPay) {
+  container.innerHTML = "";
 
-    const div=document.createElement("div");
-    div.className="order-card";
-    div.id="order-"+o.orderCode;
-    div.innerHTML=`
+  list.forEach(o => {
+    const items = o.items || [];
+    let total = 0;
+
+    const txt = items.map(i => {
+      const q = i.quantity || 1;
+      const p = i.price || 0;
+      total += q * p;
+      return `${i.name} x ${q}`;
+    });
+
+    const tableLabel =
+      o.table ||
+      o.tableNumber ||
+      o.tableName ||
+      null;
+
+    const div = document.createElement("div");
+    div.className = "order-card";
+    div.id = "order-" + o.orderCode;
+
+    div.innerHTML = `
       <div class="order-head">
-        <strong>${o.orderCode}</strong>
+        <div>
+          <strong>${o.orderCode}</strong>
+          ${tableLabel ? `
+            <div style="font-size:0.85rem;color:#555;margin-top:2px">
+              Table: ${tableLabel}
+            </div>
+          ` : ""}
+        </div>
         <span class="status ${o.status}">${o.status}</span>
       </div>
+
       <p><b>Items:</b> ${txt.join(", ")}</p>
       <p><b>Total:</b> ₹${total}</p>
+
       <div class="order-actions">
-        ${o.status==="pending"?`<button class="btn btn-primary">Accept</button>`:""}
-        ${o.status==="accepted"?`<button class="btn btn-primary">Complete</button>`:""}
-        ${o.status==="ready"?`<button class="btn btn-primary">Received</button>`:""}
-        ${showPay?`<button class="btn btn-pay">Payment</button>`:""}
+        ${o.status === "pending" ? `<button class="btn btn-primary">Accept</button>` : ""}
+        ${o.status === "accepted" ? `<button class="btn btn-primary">Complete</button>` : ""}
+        ${o.status === "ready" ? `<button class="btn btn-primary">Received</button>` : ""}
+        ${showPay ? `<button class="btn btn-pay">Payment</button>` : ""}
         <button class="btn btn-danger">Delete</button>
-      </div>`;
+      </div>
+    `;
 
-    const btns=div.querySelectorAll("button");
-    let i=0;
+    const btns = div.querySelectorAll("button");
+    let i = 0;
 
-    if(o.status==="pending"){btns[i++].onclick=()=>setStat(o.id,"accepted")}
-    if(o.status==="accepted"){btns[i++].onclick=()=>setStat(o.id,"ready")}
-    if(o.status==="ready"){btns[i++].onclick=()=>setStat(o.id,"completed")}
-    if(showPay){btns[i++].onclick=()=>openPayment(o,total)}
-    btns[i].onclick=()=>del(o.id);
+    if (o.status === "pending") btns[i++].onclick = () => setStat(o.id, "accepted");
+    if (o.status === "accepted") btns[i++].onclick = () => setStat(o.id, "ready");
+    if (o.status === "ready") btns[i++].onclick = () => setStat(o.id, "completed");
+    if (showPay) btns[i++].onclick = () => openPayment(o, total);
+    btns[i].onclick = () => del(o.id);
 
     container.appendChild(div);
   });
 }
+
 
 /* STATUS + DELETE */
 const setStat=(id,s)=>updateDoc(doc(db,"orders",id),{status:s,timestamp:serverTimestamp()});
